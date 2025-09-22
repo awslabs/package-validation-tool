@@ -1,0 +1,25 @@
+*~
+*#
+*.swp
+
+*.DS_Store
+
+# Python cache and temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Coverage and Testing
+/.coverage
+/.coverage.*
+/.cache
+/.pytest_cache
+/.mypy_cache
+
+# Build artifacts
+/build
+/dist
+
+# Development environment
+/.vscode

@@ -1,0 +1,27 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+FROM amazonlinux:2
+
+# AL2 based container to run package validation tool
+#
+# This Dockerfile closely matches the one for AL2023.
+
+# Package dependencies
+RUN yum install -y \
+    rpm-build \
+    yum-utils
+
+# Typical package build dependencies
+RUN yum install -y \
+    git \
+    gettext \
+    gettext-devel \
+    libtool \
+    automake \
+    autoconf
+
+# Python dependencies to install the tool
+RUN yum install -y \
+    python3-setuptools \
+    python3-pip

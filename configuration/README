@@ -1,0 +1,20 @@
+This directory contains configuration files that help in the following two
+stages of `suggest-remote-package-archives` CLI command:
+
+- `transformations_{common,<distro>}.json` -- patterns to perform
+  transformations of original local archives + Source stanzas of the package
+  SRPM. Pattern example: regex clues to extract nested archives. Contents of
+  this configuration file must be kept in sync with
+  `package/suggesting/transformation_methods.py`.
+
+- `suggestions_{common,<distro>}.json` -- patterns to suggest URLs of remote
+  archives and corresponding Source stanzas in the package SRPM. Pattern
+  example: list of URLs of well-known repositories that host archives of many
+  software projects. Contents of this configuration file must be kept in sync
+  with `package/suggesting/suggestion_methods.py`.
+
+Patterns for the same transformation can be split across several files with a
+naming convention `transformations_*.json`. Our code will concatenate all
+patterns from all configuration files for the same transformation. Same logic
+applies to suggestion patterns. This split helps to maintain distro-specific
+patterns.

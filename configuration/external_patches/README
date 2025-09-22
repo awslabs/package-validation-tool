@@ -1,0 +1,4 @@
+Patches are taken from:
+
+- autoconf-2.69-backport-runstatedir-option.patch (GNU GPL license):
+  https://src.fedoraproject.org/rpms/autoconf/raw/f34/f/autoconf-2.69-backport-runstatedir-option.patch

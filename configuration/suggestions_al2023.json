@@ -1,0 +1,17 @@
+{
+    "suggest_remote_archive_from_known_urls_exact": {
+        "known_urls": [
+        ],
+        "_comment": "Currently empty (nothing AL2023-specific)"
+    },
+    "suggest_remote_archive_that_was_moved_and_recompressed": {
+        "replacements": [
+        ],
+        "_comment": "Currently empty (nothing AL2023-specific)"
+    },
+    "suggest_remote_archive_from_another_subdomain_url": {
+        "subdomains": [
+        ],
+        "_comment": "Currently empty (nothing AL2023-specific)"
+    }
+}

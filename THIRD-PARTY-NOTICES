@@ -1,0 +1,16 @@
+Package-Validation-Tool uses third-party resources that may be distributed
+under licenses different than the Package-Validation-Tool software.
+
+In the event that we accidentally failed to list a required notice, please
+bring it to our attention by creating a pull request or filing a GitHub issue
+with our project.
+
+The attached notices are provided for information only.
+
+
+1) License Notice for patches
+-----------------------------
+
+- File: configuration/external_patches/autoconf-2.69-backport-runstatedir-option.patch
+  - GNU GPL license
+  - copied from https://src.fedoraproject.org/rpms/autoconf/raw/f34/f/autoconf-2.69-backport-runstatedir-option.patch

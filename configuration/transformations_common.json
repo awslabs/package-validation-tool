@@ -1,0 +1,9 @@
+{
+    "transform_extract_nested_archives": {
+        "clues_regex": [
+            "\\bblob\\b",
+            "\\.tar$"
+        ],
+        "_comments": "Nested archives have filenames like packagename-blob.tar"
+    }
+}

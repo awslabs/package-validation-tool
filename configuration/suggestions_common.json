@@ -1,0 +1,26 @@
+{
+    "suggest_remote_archive_from_known_urls_exact": {
+        "known_urls": [
+            { "url": "https://ctan.math.illinois.edu/systems/texlive/tlnet/archive/", "_comment": "Repo for texlive-* packages" },
+            { "url": "https://ftp2.osuosl.org/pub/blfs/conglomeration/i18n-fonts/", "_comment": "Repo for a2ps package" }
+        ]
+    },
+    "suggest_remote_archive_that_was_moved_and_recompressed": {
+        "replacements": [
+            { "from": "<archive_basename>", "to": "fossils/<archive_basename>" },
+            { "from": "<archive_basename>", "to": "source/<archive_basename>" }
+        ],
+        "_comment": "Takes Source URL and constructs new URL using each replacement rule above",
+        "_comment_on_archive_name": "Logic will replace <archive_basename> with actual archive basename",
+        "_comment_on_archive_extension": "Logic will try all known archive extensions",
+        "_comment_example0": "https://www.zlib.net/zlib-1.2.11.tar.xz -> https://www.zlib.net/fossils/zlib-1.2.11.tar.gz",
+        "_comment_example1": "http://archive.apache.org/dist/jakarta/oro/jakarta-oro-2.0.8.tar.gz -> http://archive.apache.org/dist/jakarta/oro/source/jakarta-oro-2.0.8.tar.gz"
+    },
+    "suggest_remote_archive_from_another_subdomain_url": {
+        "subdomains": [
+            "archive"
+        ],
+        "_comment": "Takes Source URL and constructs new URLs by replacing the subdomain",
+        "_comment_example0": "https://www.apache.org/dist/httpd/httpd-2.4.62.tar.bz2 -> https://archive.apache.org/dist/httpd/httpd-2.4.62.tar.bz2"
+    }
+}

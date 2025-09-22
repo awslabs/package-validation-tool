@@ -1,0 +1,8 @@
+{
+    "transform_extract_nested_archives": {
+        "clues_regex": [
+            "\\btexlive\\b"
+        ],
+        "_comments0": "for texlive packages, AL2023 uses one large blob by creating a tar of all xz and bz2 files"
+    }
+}
