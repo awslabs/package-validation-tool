@@ -212,7 +212,7 @@ class SystemValidationResult(JsonSerializableMixin):
     """Result of analyzing all system packages."""
 
     report: Dict[str, PackageValidationResult]
-    version: str = "2024-10-05"
+    version: str = "2025-09-22"
 
 
 def validate_single_package(
