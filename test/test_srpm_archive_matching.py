@@ -404,7 +404,7 @@ def test_validate_system_packages_cli():
             assert isinstance(system_output_data, dict)
             assert "report" in system_output_data
             assert "version" in system_output_data
-            assert system_output_data["version"] == "2024-10-05"
+            assert system_output_data["version"] == "2025-09-22"
             assert isinstance(system_output_data["report"], dict)
             assert len(system_output_data["report"]) > 0
 
