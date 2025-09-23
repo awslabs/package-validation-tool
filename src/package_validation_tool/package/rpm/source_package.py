@@ -701,7 +701,10 @@ class RPMSourcepackage:
         matching = True
         for archive_name, repos_list in matched_archives.items():
             if not any(repo.matched for repo in repos_list):
-                log.debug("Local archive %s does not have any matching repos", archive_name)
+                if repos_list:
+                    log.debug("Local archive %s has %d repo(s) but none matched successfully", archive_name, len(repos_list))
+                else:
+                    log.debug("Local archive %s does not have any matching repos", archive_name)
                 matching = False
 
         return PackageRemoteReposResult(
