@@ -215,7 +215,10 @@ def _suggest_repo_from_extracted_links(
         if not is_url_accessible(spec_source):
             continue
 
-        for extracted_link in extract_links(spec_source):
+        extracted_links = extract_links(spec_source)
+        if extracted_links is None:
+            continue
+        for extracted_link in extracted_links:
             if not project_name.lower() in extracted_link.lower():
                 # link not related to local archive
                 continue
