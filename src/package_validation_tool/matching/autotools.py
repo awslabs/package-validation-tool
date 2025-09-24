@@ -572,13 +572,42 @@ class AutotoolsRunner:
         """
         log.info("Generating Autotools files in source repository...")
 
-        # prepare PATH environment variable
+        # prepare PATH and PERL5LIB environment variables
         env = os.environ.copy()
         path_parts = [path for path in tool_paths.values() if path]
+        perl5lib_parts = []
 
         if path_parts:
             env["PATH"] = ":".join(path_parts) + ":" + env.get("PATH", "")
             log.debug("Updated PATH: %s", env["PATH"])
+
+            # Autotools bring, and depend on, perl modules. Hence, extending Perl library paths
+            for path in path_parts:
+                if not path:
+                    continue
+
+                # Perl modules are located in the share directory next to the bin path
+                bin_path = Path(path)
+                share_path = bin_path.parent / "share"
+                if not share_path.is_dir():
+                    continue
+                # Only include directories that contain .pm files
+                for subdir in share_path.iterdir():
+                    if not subdir.is_dir():
+                        continue
+                    pm_files = list(subdir.rglob("*.pm"))
+                    if pm_files:
+                        perl5lib_parts.append(str(subdir))
+                        log.debug("Found Perl modules in: %s", subdir)
+
+            if perl5lib_parts:
+                existing_perl5lib = env.get("PERL5LIB", "")
+                env["PERL5LIB"] = (existing_perl5lib + ":" if existing_perl5lib else "") + ":".join(
+                    perl5lib_parts
+                )
+                log.debug("Updated PERL5LIB: %s", env["PERL5LIB"])
+            else:
+                log.debug("No Perl library paths found for autotools modules")
 
         success = True
 
@@ -664,6 +693,7 @@ class AutotoolsRunner:
                 return True
             else:
                 log.error("Command failed: %s", " ".join(cmd))
+                log.debug("Command failed with error output\n%s", result.stderr)
                 return False
 
         except Exception as e:
