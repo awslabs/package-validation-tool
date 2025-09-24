@@ -10,14 +10,17 @@ RUN dnf install -y \
     rpm-build \
     dnf-utils
 
-# Typical package build dependencies
-RUN dnf install -y \
+# Typical package build dependencies, and replace gnupg minimal with gnupg
+RUN dnf install -y  --allowerasing \
+    automake \
+    autoconf \
+    gcc \
     git \
     gettext \
     gettext-devel \
+    gnupg2 \
     libtool \
-    automake \
-    autoconf
+    make
 
 # Python dependencies to install the tool
 RUN dnf install -y \
