@@ -12,6 +12,7 @@
 # skipped. This is useful to test commands during development.
 
 set -e
+trap 'echo "Error in test-in-venv.sh on line $LINENO" >&2' ERR
 
 # Configuration
 VENV_DIR=".venv-testing"
