@@ -14,12 +14,15 @@ RUN yum install -y \
 
 # Typical package build dependencies
 RUN yum install -y \
+    automake \
+    autoconf \
+    gcc \
     git \
     gettext \
     gettext-devel \
+    gnupg2 \
     libtool \
-    automake \
-    autoconf
+    make
 
 # Python dependencies to install the tool
 RUN yum install -y \
