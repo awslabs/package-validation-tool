@@ -8,7 +8,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar, cast
 
 # Packages with support right now
 SUPPORTED_PACKAGE_TYPES = ["rpm"]
@@ -47,7 +47,7 @@ class JsonSerializableMixin:
                 return [obj_without_internal_fields(item) for item in obj]
             return obj
 
-        return obj_without_internal_fields(dataclasses.asdict(self))
+        return obj_without_internal_fields(dataclasses.asdict(cast(Any, self)))
 
     def write_json_output(self, output_path: str):
         """Write result in JSON format to given path."""

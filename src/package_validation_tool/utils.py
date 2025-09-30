@@ -122,7 +122,7 @@ def extract_links(url: str) -> Optional[List[str]]:
 
         soup = BeautifulSoup(response.content, "html.parser")
         links = soup.find_all("a", href=True)
-        all_links = [link["href"] for link in links]
+        all_links = [str(link["href"]) for link in links]
         return list(set(all_links))  # Remove duplicates
     except Exception as e:
         log.debug("Error scraping links from the web page %s: %r", url, e)

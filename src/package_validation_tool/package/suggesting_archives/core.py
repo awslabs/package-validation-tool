@@ -152,9 +152,11 @@ class RemotePackageArchivesSuggester:
                 "Cannot invoke determine_unused_spec_sources before find_suggestions"
             )
         all_spec_sources = set(self._spec_sources)
-        used_spec_sources = set()
+        used_spec_sources: set[str] = set()
         for remote_archive_results in self._suggestion_result.suggestions.values():
-            used_spec_sources.update(x.spec_source for x in remote_archive_results)
+            used_spec_sources.update(
+                x.spec_source for x in remote_archive_results if x.spec_source is not None
+            )
         self._suggestion_result.unused_spec_sources = list(all_spec_sources - used_spec_sources)
 
     def get_suggestion_result(self):
@@ -241,6 +243,9 @@ def _get_remote_archives_for_source_package(
     source_package_name = source_package.get_name()
     local_archives, spec_sources = source_package.get_local_and_spec_source_archives()
 
+    if source_package_name is None:
+        raise ValueError("Unable to determine source package name")
+
     remote_package_archive_suggester = RemotePackageArchivesSuggester(
         source_package_name=source_package_name,
         local_archives=local_archives,
@@ -286,7 +291,10 @@ def get_remote_archives_for_package(
     #
     # FIXME: this triggers a slow "download-extract-parse" routine, even though we only need to
     #        learn the name of source package and then we probably get the result from the cache
-    source_package.package_name = source_package.get_name()
+    source_package_name = source_package.get_name()
+    if source_package_name is None:
+        raise ValueError("Unable to determine source package name")
+    source_package.package_name = source_package_name
 
     return _get_remote_archives_for_source_package(
         source_package=source_package,

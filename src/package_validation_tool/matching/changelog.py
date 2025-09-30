@@ -234,7 +234,9 @@ class ChangelogRunner:
         log.debug("Could not recognize changelog format")
         return ChangelogGenerator.Unknown, None
 
-    def _generate_changelog_using_gitlog(self, target_path: Path, git_log_format: str) -> bool:
+    def _generate_changelog_using_gitlog(
+        self, target_path: Path, git_log_format: Optional[str]
+    ) -> bool:
         """
         Generate a changelog file using git log with the specified format.
 

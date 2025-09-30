@@ -184,7 +184,7 @@ class PackageValidationResult(JsonSerializableMixin):
 
     package_name: str
     source_package_name: str
-    package_details: Dict[str, str]
+    package_details: Optional[Dict[str, str]]
 
     archive_hashes: Dict[str, str]
 
@@ -193,8 +193,8 @@ class PackageValidationResult(JsonSerializableMixin):
     matched_remote_archives: Dict[str, List[RemoteArchiveResult]]
     matched_remote_repos: Dict[str, List[RemoteRepoResult]]
 
-    upstream_code_repos: Dict[str, str]
-    upstream_archives: Dict[str, str]
+    upstream_code_repos: Dict[str, Optional[str]]
+    upstream_archives: Dict[str, Optional[str]]
 
     srpm_available: bool
     spec_valid: bool
@@ -233,6 +233,10 @@ def validate_single_package(
         )
     else:
         raise ValueError(f"Unsupported package type: {package_type}")
+
+    source_package_name = source_package.get_name()
+    if source_package_name is None:
+        raise ValueError("Unable to determine source package name")
 
     log.debug("Processing package %s", package_name)
 
@@ -299,7 +303,7 @@ def validate_single_package(
     # report both results (matching archives and matching repos) in a single JSON object
     return PackageValidationResult(
         package_name=package_name,
-        source_package_name=source_package.get_name(),
+        source_package_name=source_package_name,
         archive_hashes=matched_remote_repos.archive_hashes,
         suggested_remote_archives=suggested_remote_archives.suggestions,
         suggested_remote_repos=suggested_remote_repos.suggestions,
@@ -383,8 +387,9 @@ def validate_system_packages(
         combined_packages = combined_packages[:nr_packages_to_check]
 
     if nr_processes is None:
-        nr_processes = os.cpu_count()
-    nr_processes = max(1, min(nr_processes, os.cpu_count()))
+        nr_processes = os.cpu_count() or 1
+    cpu_count = os.cpu_count() or 1
+    nr_processes = max(1, min(nr_processes, cpu_count))
     log.info("Run validation with %d processes", nr_processes)
 
     package_data: Dict[str, PackageValidationResult] = {}

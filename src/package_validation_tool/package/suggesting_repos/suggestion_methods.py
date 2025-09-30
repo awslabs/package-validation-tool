@@ -423,7 +423,7 @@ def _suggest_repo_from_repology_website(
         for li_element in ul_element.find_all("li"):
             a_element = li_element.find("a", href=True)
             if a_element:
-                repo_url = a_element["href"]
+                repo_url = str(a_element["href"])
                 normalized_url = repo_url.lower().rstrip("/").removesuffix(".git")
                 if normalized_url in seen_repos:
                     continue
