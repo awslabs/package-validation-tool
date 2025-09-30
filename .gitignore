@@ -13,6 +13,7 @@ __pycache__/
 # Coverage and Testing
 /.coverage
 /.coverage.*
+/coverage.*
 /.cache
 /.pytest_cache
 /.mypy_cache
@@ -20,6 +21,9 @@ __pycache__/
 # Build artifacts
 /build
 /dist
+
+# Tool specific caches
+/autotools-cache
 
 # Development environment
 /.vscode
