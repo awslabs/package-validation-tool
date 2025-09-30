@@ -141,7 +141,9 @@ class RPMSourcepackage:
         # note that some fields have "__" suffix, to ignore them in the cached object (as they have
         # temporary directories in their values)
         self.package_name = package_name
-        self._storage_dir__: Optional[str] = None  # Temporary storage on disk for this object
+        self._storage_dir__: Optional[tempfile.TemporaryDirectory] = (
+            None  # Temporary storage on disk for this object
+        )
         self._srpm_file_path__: Optional[str] = os.path.abspath(srpm_file) if srpm_file else None
         self._srpm_content_dir__: Optional[str] = None
         self._spec: Optional[RPMSpec] = None
@@ -268,6 +270,7 @@ class RPMSourcepackage:
                 source_extractable=self._package_source_path__ is not None,
             )
 
+        assert self._srpm_content_dir__ is not None  # type narrowing for mypy
         local_archive_files = get_archive_files(self._srpm_content_dir__)
 
         # no local archives, so no need to download (consider match as true)
@@ -282,7 +285,7 @@ class RPMSourcepackage:
                 source_extractable=self._package_source_path__ is not None,
             )
 
-        matched_archives = {}
+        matched_archives: Dict[str, List[RemoteArchiveResult]] = {}
         archive_hashes = {}
 
         # For each local archive, try to match it against suggested remote archives logic: for each
@@ -338,6 +341,7 @@ class RPMSourcepackage:
                 matched_archives[local_archive_basename].append(archive_result)
 
                 remote_archive_basename = os.path.basename(suggested_archive.remote_archive)
+                assert self._storage_dir__ is not None  # type narrowing for mypy
                 with tempfile.TemporaryDirectory(
                     prefix="package-validation-tool-suggested-archive-",
                     suffix=f"-{save_path(remote_archive_basename)}",
@@ -485,6 +489,7 @@ class RPMSourcepackage:
                 source_extractable=self._package_source_path__ is not None,
             )
 
+        assert self._srpm_content_dir__ is not None  # type narrowing for mypy
         local_archive_files = get_archive_files(self._srpm_content_dir__)
 
         # no local archives, so no need to git-clone repos (consider match as true)
@@ -498,7 +503,7 @@ class RPMSourcepackage:
                 source_extractable=self._package_source_path__ is not None,
             )
 
-        matched_archives = {}
+        matched_archives: Dict[str, List[RemoteRepoResult]] = {}
         archive_hashes = {}
 
         # logic: for each local archive and for each remote repo found for this local archive,
@@ -517,6 +522,7 @@ class RPMSourcepackage:
                 continue
 
             # unpack local archive, because we will compare with non-archived git repo checkouts
+            assert self._storage_dir__ is not None  # type narrowing for mypy
             with tempfile.TemporaryDirectory(
                 prefix="package-validation-tool-archive-to-match-",
                 suffix=f"-{save_path(local_archive_basename)}",
@@ -586,6 +592,7 @@ class RPMSourcepackage:
                     )
                     matched_archives[local_archive_basename].append(repo_result)
 
+                    assert self._storage_dir__ is not None  # type narrowing for mypy
                     with tempfile.TemporaryDirectory(
                         prefix="package-validation-tool-repo-to-match-",
                         suffix=f"-{save_path(local_archive_basename)}",
@@ -593,6 +600,7 @@ class RPMSourcepackage:
                     ) as tmpdir_repo:
                         log.debug("Cloning repo %s into %s", suggested_repo.repo, tmpdir_repo)
 
+                        assert suggested_repo.repo is not None  # type narrowing for mypy
                         success, _ = clone_git_repo(
                             suggested_repo.repo, target_dir=tmpdir_repo, bare=True
                         )
@@ -603,9 +611,9 @@ class RPMSourcepackage:
                             )
                             continue
 
-                        if not checkout_in_git_repo(
-                            tmpdir_repo, suggested_repo.tag or suggested_repo.commit_hash
-                        ):
+                        tag_or_commit = suggested_repo.tag or suggested_repo.commit_hash
+                        assert tag_or_commit is not None  # type narrowing for mypy
+                        if not checkout_in_git_repo(tmpdir_repo, tag_or_commit):
                             log.warning(
                                 "Failed to checkout commit/tag %s in repo %s, ignore for matchability check",
                                 suggested_repo.tag or suggested_repo.commit_hash,
@@ -617,9 +625,7 @@ class RPMSourcepackage:
                         repo_result.accessible = True
 
                         # Check for content-level deduplication using git tree hash
-                        repo_tree_hash = get_git_tree_hash(
-                            tmpdir_repo, suggested_repo.tag or suggested_repo.commit_hash
-                        )
+                        repo_tree_hash = get_git_tree_hash(tmpdir_repo, tag_or_commit)
                         if repo_tree_hash:
                             if repo_tree_hash in seen_repo_tree_hashes:
                                 log.debug(
@@ -633,7 +639,7 @@ class RPMSourcepackage:
                             seen_repo_tree_hashes.add(repo_tree_hash)
 
                         # If enabled, apply Autotools processing before file matching
-                        if apply_autotools and autotools_dir and AutotoolsRunner:
+                        if apply_autotools and autotools_dir:
                             log.info("Applying Autotools processing before file matching...")
                             repo_result.autotools_applied = True
                             try:
@@ -754,6 +760,7 @@ class RPMSourcepackage:
             os.makedirs(srpm_dst_dir, exist_ok=True)
             shutil.rmtree(srpm_dst_dir, ignore_errors=True)
             log.debug("Storing SRPM content %s in %s", self._srpm_file_path__, srpm_dst_dir)
+            assert self._srpm_content_dir__ is not None  # type narrowing for mypy
             shutil.copytree(self._srpm_content_dir__, srpm_dst_dir)
             copies += 1
 
@@ -769,9 +776,11 @@ class RPMSourcepackage:
             log.debug("Failed initialization of SRPM %r", self._srpm_file_path__)
             return [], []
 
+        assert self._spec is not None  # type narrowing for mypy
         spec_sources = self._spec.source_entries().values()
         spec_source_archives = [ar for ar in spec_sources if ar.endswith(SUPPORTED_ARCHIVE_TYPES)]
 
+        assert self._srpm_content_dir__ is not None  # type narrowing for mypy
         local_archives = get_archive_files(self._srpm_content_dir__)
 
         return local_archives, spec_source_archives
@@ -781,6 +790,7 @@ class RPMSourcepackage:
         if not self._initialize_package():
             log.debug("Failed initialization of SRPM %r", self._srpm_file_path__)
             return []
+        assert self._spec is not None  # type narrowing for mypy
         return self._spec.repourl_entries()
 
     def get_name(self) -> Optional[str]:
@@ -790,4 +800,5 @@ class RPMSourcepackage:
         if not self._initialize_package():
             log.debug("Failed initialization of SRPM %r", self._srpm_file_path__)
             return None
+        assert self._spec is not None  # type narrowing for mypy
         return self._spec.package_name()

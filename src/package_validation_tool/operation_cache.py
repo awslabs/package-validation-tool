@@ -42,7 +42,7 @@ def generate_hash_metadata(func_name, args, kwargs):
             return ",".join(obj_to_str(item) for item in obj)
         elif isinstance(obj, dict):
             return ",".join(f"{k}:{obj_to_str(v)}" for k, v in sorted(obj.items()))
-        elif is_dataclass(obj):
+        elif is_dataclass(obj) and not isinstance(obj, type):
             return f"{obj.__class__.__name__}={obj_to_str(asdict(obj))}"
         elif "__class__" in dir(obj):
             member_list = [a for a in dir(obj) if not callable(getattr(obj, a)) and "__" not in a]
@@ -172,15 +172,15 @@ class OperationCache:
 
         result = func(*args, **kwargs)
 
-        try:
-            if cache_file is not None:
+        if cache_file is not None:
+            try:
                 store_return_value_in_cache_file(
                     cache_file=cache_file, func=func, result=result, cache_meta_data=cache_meta_data
                 )
-        except Exception as e:
-            log.debug("Error: failed caching result for function call %s: %s", func.__name__, e)
-            self._cached_store_errors = 0
-            shutil.rmtree(cache_file, ignore_errors=True)
+            except Exception as e:
+                log.debug("Error: failed caching result for function call %s: %s", func.__name__, e)
+                self._cached_store_errors = 0
+                shutil.rmtree(cache_file, ignore_errors=True)
 
         return result
 

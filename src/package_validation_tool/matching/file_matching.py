@@ -70,7 +70,7 @@ class FileMatcher:
     """
 
     def __init__(self, cleanup: bool = True):
-        self.state_dict: Dict[str] = {}
+        self.state_dict: Dict[str, FileMatchState] = {}
         self.temporary_directories: List[str] = []
         self.cleanup: bool = cleanup
 

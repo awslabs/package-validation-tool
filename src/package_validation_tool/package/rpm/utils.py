@@ -63,7 +63,7 @@ def parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool) -> Optional[st
             "SOURCES content: %r", os.listdir(os.path.join(home_env_dir, "rpmbuild", "SOURCES"))
         )
     else:
-        home_env_dir = os.environ.get("HOME")
+        home_env_dir = os.environ.get("HOME", "/tmp")
 
     try:
         # run the rpmspec command and capture the output

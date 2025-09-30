@@ -115,7 +115,7 @@ def find_best_matching_tag(archive: str, tags: List[TagInfo]) -> Optional[TagInf
 
     log.warning("Multiple tags found for %s: %r", archive, [tag.original_tag for tag in tags])
 
-    best_score = -1
+    best_score = -1.0
     best_tag = None
 
     for tag_info in tags:
@@ -294,6 +294,8 @@ def verify_tag_exists(
             return matching_tags[0].commit_hash, matching_tags[0].original_tag
 
         best_tag = find_best_matching_tag(archive, matching_tags)
+        if best_tag is None:
+            return None
         return best_tag.commit_hash, best_tag.original_tag
 
     # Fetch all tags from the repository

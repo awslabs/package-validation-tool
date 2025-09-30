@@ -20,7 +20,7 @@ import subprocess
 import tarfile
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from package_validation_tool.matching import AUTOTOOLS_PATCHES_DIR
 from package_validation_tool.utils import (
@@ -52,7 +52,7 @@ DEFAULT_LIBTOOL_VERSION = "2.4.7"
 GNU_FTP_BASE_URL = "https://mirrors.ocf.berkeley.edu/gnu/"
 
 # Tool configuration - consolidates all tool-specific information
-TOOL_CONFIGS = {
+TOOL_CONFIGS: Dict[str, Dict[str, Any]] = {
     "automake": {
         "default_version": DEFAULT_AUTOMAKE_VERSION,
         "verification_files": ["Makefile.am", "Makefile.in"],
@@ -243,6 +243,7 @@ class AutotoolsRunner:
                     version,
                 )
             self._tool_versions[tool] = version
+            assert version is not None  # Type narrowing for mypy
 
         log.info(
             "Detected versions: %s",
@@ -268,9 +269,9 @@ class AutotoolsRunner:
         log.info("Autotools processing completed successfully")
         return True
 
-    def get_detected_versions(self) -> Dict[str, Optional[str]]:
+    def get_detected_versions(self) -> Dict[str, str]:
         """Get detected Autotools versions: dict of "tool: version" key pairs."""
-        return self._tool_versions.copy()
+        return {k: v for k, v in self._tool_versions.items() if v is not None}
 
     def _verify_uses_autotools(self) -> bool:
         """Verify that the software project uses Autotools for build."""
@@ -343,6 +344,7 @@ class AutotoolsRunner:
         """Download Autotools packages with detected versions."""
         success = True
         for tool, version in self._tool_versions.items():
+            assert version is not None  # type narrowing for mypy
             if not self._download_package(tool, version):
                 log.warning("Failed to download %s version %s", tool.capitalize(), version)
                 success = False
@@ -438,6 +440,7 @@ class AutotoolsRunner:
         """
         tool_paths = {}
         for tool, version in self._tool_versions.items():
+            assert version is not None  # type narrowing for mypy
             path = self._install_package(tool, version)
             if path:
                 log.info("%s %s installed at %s", tool.capitalize(), version, path)
@@ -464,7 +467,7 @@ class AutotoolsRunner:
 
         try:
             with tarfile.open(archive_path, "r:gz") as tar:
-                if not secure_tar_extractall(tar, self.autotools_dir):
+                if not secure_tar_extractall(tar, str(self.autotools_dir)):
                     log.error("Failed to securely extract %s", archive_path)
                     return None
 
@@ -620,7 +623,7 @@ class AutotoolsRunner:
                 m4_includes.extend(["-I", "macros"])
 
             # First run autopoint and libtoolize (always run, no file checks needed)
-            initial_commands = [
+            initial_commands: List[Tuple[str, str, List[str]]] = [
                 ("autopoint", "gettext", []),
                 ("libtoolize", "libtool", []),
             ]

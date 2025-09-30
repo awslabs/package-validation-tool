@@ -133,6 +133,7 @@ class RepoSuggester:
         log.info("Finding git tags for %s", local_archive_basename)
         for repo_result in self._suggestion_result.suggestions[local_archive_basename]:
             version_info = extract_version_from_archive_name(local_archive_basename)
+            assert repo_result.repo is not None  # type narrowing for mypy
             commit_hash, tag = self._find_version_in_git_repo(
                 repo_result.repo, version_info, local_archive_basename
             )
@@ -199,6 +200,9 @@ def _get_repos_for_source_package(
     spec_sources.extend(source_package.get_repourls())
     spec_sources = list(set(spec_sources))  # remove duplicates
 
+    if source_package_name is None:
+        raise ValueError("Unable to determine source package name")
+
     repo_suggester = RepoSuggester(
         source_package_name=source_package_name,
         local_archives=local_archives,
@@ -240,7 +244,10 @@ def get_repos_for_package(
     #
     # FIXME: this triggers a slow "download-extract-parse" routine, even though we only need to
     #        learn the name of source package and then we probably get the result from the cache
-    source_package.package_name = source_package.get_name()
+    source_package_name = source_package.get_name()
+    if source_package_name is None:
+        raise ValueError("Unable to determine source package name")
+    source_package.package_name = source_package_name
 
     return _get_repos_for_source_package(
         source_package=source_package,
