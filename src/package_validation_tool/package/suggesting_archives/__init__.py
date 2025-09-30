@@ -9,7 +9,7 @@ import os
 import pathlib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from package_validation_tool.package import JsonSerializableMixin, SuggestionMixin
 
@@ -18,12 +18,12 @@ from package_validation_tool.package import JsonSerializableMixin, SuggestionMix
 class LocalArchiveTransformation:
     """Result of transforming local archives and corresponding spec Sources in the package."""
 
-    name: str = None
+    name: Optional[str] = None
     input_local_archives: List[str] = field(default_factory=list)
     input_spec_sources: List[str] = field(default_factory=list)
     output_local_archives: List[str] = field(default_factory=list)
     output_spec_sources: List[str] = field(default_factory=list)
-    notes: str = None
+    notes: Optional[str] = None
     confidence: float = 0.00  # 0.00 .. 1.00
 
 
@@ -31,7 +31,7 @@ class LocalArchiveTransformation:
 class RemoteArchiveSuggestion(JsonSerializableMixin, SuggestionMixin):
     """Result of suggesting a remote archive for a local archive in the package."""
 
-    remote_archive: str = None
+    remote_archive: Optional[str] = None
 
 
 @dataclass
@@ -46,7 +46,7 @@ class PackageRemoteArchivesSuggestions(JsonSerializableMixin):
     original and "transformed" lists will be identical.
     """
 
-    source_package_name: str = None
+    source_package_name: Optional[str] = None
 
     orig_local_archives: List[str] = field(default_factory=list)
     orig_spec_sources: List[str] = field(default_factory=list)
@@ -91,8 +91,8 @@ class PackageRemoteArchivesStats(JsonSerializableMixin):
 class Config:
     """Get configuration rules/patterns from `{transformations,suggestions}_*.json` files."""
 
-    _transformations_config: dict = None
-    _suggestions_config: dict = None
+    _transformations_config: Optional[dict] = None
+    _suggestions_config: Optional[dict] = None
 
     @staticmethod
     def _merge(a: dict, b: dict, path: list):
@@ -115,7 +115,7 @@ class Config:
     def _get_config(config_files_glob: str) -> dict:
         config_dir = pathlib.Path(os.environ.get("ENVROOT", ".")) / "configuration/"
 
-        config = dict()
+        config: dict = {}
         config_files = glob.glob(os.path.join(config_dir, config_files_glob))
         for filename in config_files:
             with open(filename, "r", encoding="utf-8") as f:

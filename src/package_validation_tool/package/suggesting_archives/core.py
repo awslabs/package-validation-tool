@@ -12,7 +12,7 @@ by the user), find suggestions for remote archives, get statistics, etc.
 
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
 from package_validation_tool.operation_cache import disk_cached_operation
 from package_validation_tool.package import SUPPORTED_PACKAGE_TYPES
@@ -262,7 +262,7 @@ def _get_remote_archives_for_source_package(
 @disk_cached_operation
 def get_remote_archives_for_package(
     package_name: str,
-    srpm_file: str = None,
+    srpm_file: Optional[str] = None,
     package_type: str = "rpm",
     transform_archives: bool = False,
 ) -> PackageRemoteArchivesSuggestions:
@@ -296,8 +296,8 @@ def get_remote_archives_for_package(
 
 def suggest_remote_package_archives(
     package_name: str,
-    srpm_file: str = None,
-    output_json_path: str = None,
+    srpm_file: Optional[str] = None,
+    output_json_path: Optional[str] = None,
     package_type: str = "rpm",
     transform_archives: bool = False,
 ) -> bool:

@@ -8,7 +8,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 # Packages with support right now
 SUPPORTED_PACKAGE_TYPES = ["rpm"]
@@ -82,7 +82,7 @@ class PackageResultMixin:
     """Mixin providing common package result fields."""
 
     matching: bool
-    source_package_name: str = None
+    source_package_name: Optional[str] = None
     archive_hashes: Dict[str, str] = field(default_factory=dict)
 
     # Package state indicators
@@ -108,9 +108,9 @@ class PackageResultMixin:
 class SuggestionMixin:
     """Mixin providing common suggestion fields."""
 
-    spec_source: str = None
-    suggested_by: str = None
-    notes: str = None
+    spec_source: Optional[str] = None
+    suggested_by: Optional[str] = None
+    notes: Optional[str] = None
     confidence: float = 0.00  # 0.00 .. 1.00
 
 
@@ -126,7 +126,7 @@ class UpstreamMatchingMixin:
 class RemoteArchiveResult(JsonSerializableMixin, FileMatchingStatsMixin, UpstreamMatchingMixin):
     """Result of matching a package local archive."""
 
-    remote_archive: str = None
+    remote_archive: Optional[str] = None
 
 
 @dataclass
@@ -148,12 +148,12 @@ class PackageRemoteArchivesResult(JsonSerializableMixin, PackageResultMixin):
 class RemoteRepoResult(JsonSerializableMixin, FileMatchingStatsMixin, UpstreamMatchingMixin):
     """Result of remote repo matching a package local archive."""
 
-    remote_repo: str = None
+    remote_repo: Optional[str] = None
 
     # particular version in the repo; tag may be empty/None (if corresponding version in the
     # repository is identified solely by the commit hash)
-    commit_hash: str = None
-    tag: str = None
+    commit_hash: Optional[str] = None
+    tag: Optional[str] = None
 
     # Autotools-related fields
     autotools_applied: bool = False

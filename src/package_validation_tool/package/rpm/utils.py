@@ -15,7 +15,7 @@ import tempfile
 from functools import lru_cache
 from pathlib import Path
 from subprocess import DEVNULL
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from package_validation_tool.utils import pushd, versions_is_greater
 
@@ -198,7 +198,9 @@ def get_package_providing_latest(package_name: str):
 
 
 def download_and_extract_source_package(
-    package_name: str, content_directory: str = "source_rpm_content", srpm_file: str = None
+    package_name: str,
+    content_directory: str = "source_rpm_content",
+    srpm_file: Optional[str] = None,
 ) -> Tuple[str, str]:
     """
     Download the source RPM file for the given package and extract the source files in CWD.
@@ -288,7 +290,7 @@ def get_env_with_home(new_home_var: str):
 
 
 def prepare_rpmbuild_source(
-    src_rpm_file: str, package_rpmbuild_home: str = None
+    src_rpm_file: str, package_rpmbuild_home: Optional[str] = None
 ) -> Tuple[str, str, str]:
     """
     Use an existing .src.rpm file, and prepare the source package for building.
