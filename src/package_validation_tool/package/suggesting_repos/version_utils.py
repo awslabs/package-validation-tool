@@ -9,7 +9,7 @@ import subprocess
 from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from package_validation_tool.matching.file_matching import SUPPORTED_ARCHIVE_TYPES
 
@@ -96,7 +96,7 @@ def is_release_tag(tag: str) -> bool:
     return True
 
 
-def find_best_matching_tag(archive: str, tags: List[TagInfo]) -> TagInfo:
+def find_best_matching_tag(archive: str, tags: List[TagInfo]) -> Optional[TagInfo]:
     """
     Find the tag that best matches the archive name.
 
@@ -286,7 +286,7 @@ def verify_tag_exists(
             archive = archive[: -len(ext)]
             break
 
-    def _handle_matching_tags(matching_tags: List[TagInfo]) -> Tuple[str, str]:
+    def _handle_matching_tags(matching_tags: List[TagInfo]) -> Optional[Tuple[str, str]]:
         if not matching_tags:
             return None
 
@@ -299,7 +299,7 @@ def verify_tag_exists(
     # Fetch all tags from the repository
     cmd = ["git", "tag", "--list", "--format=%(objectname) %(refname:short)"]
     try:
-        result = subprocess.run(
+        git_tag_list_result = subprocess.run(
             cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=repo_dir
         )
     except subprocess.CalledProcessError as e:
@@ -307,7 +307,7 @@ def verify_tag_exists(
         return "", ""
 
     # Split the output into lines
-    lines = result.stdout.strip().split("\n")
+    lines = git_tag_list_result.stdout.strip().split("\n")
     if not lines or lines[0] == "":
         log.warning("No tags found in repository directory %s", repo_dir)
         return "", ""

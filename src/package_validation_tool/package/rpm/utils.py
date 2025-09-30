@@ -51,7 +51,7 @@ def get_system_install_tool() -> str:
     raise RuntimeError("No package installation tool found")
 
 
-def parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool) -> str:
+def parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool) -> Optional[str]:
     """Use 'rpmspec -P' to handle macros in a spec file, and return the flat content."""
 
     # if spec_file path has $RPM_HOME / "rpmbuild" / "SPEC" / *.spec, then set home to $RPM_HOME
@@ -201,7 +201,7 @@ def download_and_extract_source_package(
     package_name: str,
     content_directory: str = "source_rpm_content",
     srpm_file: Optional[str] = None,
-) -> Tuple[str, str]:
+) -> Tuple[Optional[str], Optional[str]]:
     """
     Download the source RPM file for the given package and extract the source files in CWD.
     Returns a tuple with the location to the .src.rpm file and the directory with the package content

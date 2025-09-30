@@ -70,7 +70,9 @@ def generate_hash_metadata(func_name, args, kwargs):
     return readable_key, cache_meta_data
 
 
-def load_return_value_from_cache_file(cache_file: str, func, cache_meta_data: dict) -> dict:
+def load_return_value_from_cache_file(
+    cache_file: str, func, cache_meta_data: dict
+) -> Optional[dict]:
     """Load return value for a function from cache file, if meta data matches."""
     log.debug("Loading cached result for function %s from file %s", func.__name__, cache_file)
     with open(cache_file, "r", encoding="utf-8") as f:
