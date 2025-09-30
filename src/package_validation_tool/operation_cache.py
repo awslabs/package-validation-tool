@@ -10,7 +10,7 @@ import os
 import shutil
 from dataclasses import asdict, is_dataclass
 from functools import wraps
-from typing import Any
+from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,9 @@ def load_return_value_from_cache_file(cache_file: str, func, cache_meta_data: di
     return cached_result
 
 
-def store_return_value_in_cache_file(cache_file: str, func, result, cache_meta_data: dict = None):
+def store_return_value_in_cache_file(
+    cache_file: str, func, result, cache_meta_data: Optional[dict] = None
+):
     """Store return value for a function in cache file."""
     log.debug(
         "Caching result for function %s to file %s",
@@ -109,12 +111,12 @@ class OperationCache:
     _instance = None
     _initialized = False
 
-    def __new__(cls, cache_directory: str = None, write_only: bool = False):
+    def __new__(cls, cache_directory: Optional[str] = None, write_only: bool = False):
         if cls._instance is None:
             cls._instance = super(OperationCache, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, cache_directory: str = None, write_only: bool = False):
+    def __init__(self, cache_directory: Optional[str] = None, write_only: bool = False):
         if not self._initialized:
             self.cache_directory = cache_directory
             self._calls = 0
@@ -199,7 +201,7 @@ class OperationCache:
         return f"From {self._calls} calls, {self._cached_results} have been cached ({percentage:.2f}%), using directory {self.cache_directory} {error_message}."
 
 
-def initialize_cache(cache_directory: str = None, write_only: bool = False) -> bool:
+def initialize_cache(cache_directory: Optional[str] = None, write_only: bool = False) -> bool:
     log.debug("Initializing OperationCache for directory %s", cache_directory)
     cache = OperationCache(cache_directory=cache_directory, write_only=write_only)
     cache_using_requested_dir = cache.cache_directory != cache_directory

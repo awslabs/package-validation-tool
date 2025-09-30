@@ -181,7 +181,7 @@ def read_file_as_utf8(file_path: str) -> str:
     logging.getLogger("chardet").setLevel(chardet_level)
 
     # detect the encoding using chardet
-    detected_encoding: str = chardet.detect(content_bytes)["encoding"]
+    detected_encoding: Optional[str] = chardet.detect(content_bytes)["encoding"]
     if detected_encoding:
         try:
             content = content_bytes.decode(detected_encoding)
@@ -248,7 +248,9 @@ def versions_is_greater(left: str, right: str) -> bool:
     return len(left_parts) > len(right_parts)
 
 
-def clone_git_repo(repo: str, target_dir: str = None, bare: bool = False) -> Tuple[bool, str]:
+def clone_git_repo(
+    repo: str, target_dir: Optional[str] = None, bare: bool = False
+) -> Tuple[bool, str]:
     """
     Clone a git repository to a target directory.
 

@@ -13,7 +13,7 @@ import random
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from functools import partial
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from package_validation_tool.package import (
     SUPPORTED_PACKAGE_TYPES,
@@ -50,8 +50,8 @@ def store_package_content(
 
 def match_package_archives(
     package_name: str,
-    input_archives_json_path: str = None,
-    output_json_path: str = None,
+    input_archives_json_path: Optional[str] = None,
+    output_json_path: Optional[str] = None,
     package_type: str = "rpm",
 ) -> bool:
     """
@@ -113,10 +113,10 @@ def match_package_archives(
 
 def match_package_repos(
     package_name: str,
-    input_repos_json_path: str = None,
-    output_json_path: str = None,
+    input_repos_json_path: Optional[str] = None,
+    output_json_path: Optional[str] = None,
     package_type: str = "rpm",
-    autotools_dir: str = None,
+    autotools_dir: Optional[str] = None,
     apply_autotools: bool = True,
 ) -> bool:
     """
@@ -217,10 +217,10 @@ class SystemValidationResult(JsonSerializableMixin):
 
 def validate_single_package(
     package_name: str,
-    srpm_file: str = None,
+    srpm_file: Optional[str] = None,
     package_type: str = "rpm",
     install_build_deps: InstallationDecision = InstallationDecision.NO,
-    autotools_dir: str = None,
+    autotools_dir: Optional[str] = None,
     apply_autotools: bool = True,
 ) -> PackageValidationResult:
     """Analyze a single package and return the PackageValidationResult."""
@@ -319,11 +319,11 @@ def validate_single_package(
 
 def validate_package(
     package: str,
-    srpm_file: str = None,
+    srpm_file: Optional[str] = None,
     package_type: str = "rpm",
-    output_json_path: str = None,
+    output_json_path: Optional[str] = None,
     install_build_deps: InstallationDecision = InstallationDecision.NO,
-    autotools_dir: str = None,
+    autotools_dir: Optional[str] = None,
     apply_autotools: bool = True,
 ) -> bool:
     """Run analysis on a single package, and write report."""
@@ -348,11 +348,11 @@ def validate_package(
 
 def validate_system_packages(
     package_type: str = "rpm",
-    nr_packages_to_check: int = None,
-    output_json_path: str = None,
-    nr_processes: int = None,
-    extra_packages: List[str] = None,
-    autotools_dir: str = None,
+    nr_packages_to_check: Optional[int] = None,
+    output_json_path: Optional[str] = None,
+    nr_processes: Optional[int] = None,
+    extra_packages: Optional[List[str]] = None,
+    autotools_dir: Optional[str] = None,
     apply_autotools: bool = True,
 ) -> bool:
     """Run analysis on all (latest) packages on system, and write report."""

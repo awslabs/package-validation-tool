@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from package_validation_tool.package import JsonSerializableMixin, SuggestionMixin
 
@@ -14,12 +14,12 @@ from package_validation_tool.package import JsonSerializableMixin, SuggestionMix
 class RemoteRepoSuggestion(JsonSerializableMixin, SuggestionMixin):
     """Result of suggesting a repo for a local archive in the package."""
 
-    repo: str = None
+    repo: Optional[str] = None
 
     # particular version in the repo; tag may be empty/None (if corresponding version in the
     # repository is identified solely by the commit hash)
-    commit_hash: str = None
-    tag: str = None
+    commit_hash: Optional[str] = None
+    tag: Optional[str] = None
 
 
 @dataclass
@@ -30,7 +30,7 @@ class PackageRemoteReposSuggestions(JsonSerializableMixin):
     Also contains a list of local archives and spec source lines, for convenience.
     """
 
-    source_package_name: str = None
+    source_package_name: Optional[str] = None
 
     local_archives: List[str] = field(default_factory=list)
 

@@ -667,7 +667,7 @@ class AutotoolsRunner:
             log.debug("File %s does not exist, will generate", filename)
             return True
 
-    def _run_autotools_command(self, command: str, env: dict, args: list = None) -> bool:
+    def _run_autotools_command(self, command: str, env: dict, args: Optional[list] = None) -> bool:
         """
         Run an Autotools command with proper environment.
 

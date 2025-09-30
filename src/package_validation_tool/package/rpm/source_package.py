@@ -135,7 +135,7 @@ class RPMSourcepackage:
     def __init__(
         self,
         package_name: str,
-        srpm_file: str = None,
+        srpm_file: Optional[str] = None,
         install_build_deps: InstallationDecision = InstallationDecision.NO,
     ):
         # note that some fields have "__" suffix, to ignore them in the cached object (as they have
@@ -449,7 +449,7 @@ class RPMSourcepackage:
     def match_remote_repos(
         self,
         suggested_repos: Dict[str, List[RemoteRepoSuggestion]],
-        autotools_dir: str = None,
+        autotools_dir: Optional[str] = None,
         apply_autotools: bool = True,
     ) -> PackageRemoteReposResult:
         """
@@ -702,7 +702,11 @@ class RPMSourcepackage:
         for archive_name, repos_list in matched_archives.items():
             if not any(repo.matched for repo in repos_list):
                 if repos_list:
-                    log.debug("Local archive %s has %d repo(s) but none matched successfully", archive_name, len(repos_list))
+                    log.debug(
+                        "Local archive %s has %d repo(s) but none matched successfully",
+                        archive_name,
+                        len(repos_list),
+                    )
                 else:
                     log.debug("Local archive %s does not have any matching repos", archive_name)
                 matching = False
