@@ -23,13 +23,14 @@ TEST_DIR_PATH = os.path.dirname(__file__)
 TESTRPM_SPEC_FILE = Path(TEST_DIR_PATH) / "artefacts" / "rpm" / "testrpm.spec"
 
 
-def patched_parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool):
+def patched_parse_rpm_spec_file(spec_file: str, _fallback_plain_rpm: bool):
     """Override parameter wrt parsing, to not require rpmspec tool."""
     return parse_rpm_spec_file(spec_file, fallback_plain_rpm=True)
 
 
 def patched_prepare_rpmbuild_source(
-    src_rpm_file: str = None, package_rpmbuild_home: str = "rpm_home"
+    src_rpm_file: str = None,  # pylint: disable=unused-argument
+    package_rpmbuild_home: str = "rpm_home",
 ):
     """Perform the most basic operations to fake an rpmbuild directory."""
     os.mkdir(os.path.basename(package_rpmbuild_home))
@@ -62,7 +63,7 @@ def prepare_srpm_test_environment(temp_dir: str):
     # create file testrpm-0.1.tar.gz
     local_src_path = Path(temp_dir) / "src"
     os.mkdir(local_src_path)
-    with open(local_src_path / "testfile", "w") as f:
+    with open(local_src_path / "testfile", "w", encoding="utf-8") as f:
         f.write("Test file")
 
     # zip local_src_path into testrpm-0.1.tar.gz and have a copy in the srpm directory
@@ -105,7 +106,7 @@ def test_srpm_archive_matching_success():
     with tempfile.TemporaryDirectory() as temp_dir, pushd(temp_dir):
         srpm_content_path, src_rpm_file, archive_file = prepare_srpm_test_environment(temp_dir)
 
-        def move_file_as_download(file_url: str, local_file_path: str):
+        def move_file_as_download(_file_url: str, local_file_path: str):
             """Use the local archive as downloaded file, signal success."""
             shutil.copy(archive_file, local_file_path)
             return True
@@ -192,7 +193,7 @@ def test_srpm_archive_matching_failing_offline():
     with tempfile.TemporaryDirectory() as temp_dir, pushd(temp_dir):
         srpm_content_path, src_rpm_file, _ = prepare_srpm_test_environment(temp_dir)
 
-        def move_file_as_download(file_url: str, local_file_path: str):
+        def move_file_as_download(_file_url: str, _local_file_path: str):
             """Do not create a file, and signal download failure."""
             return False
 
@@ -239,14 +240,14 @@ def test_srpm_archive_matching_function():
     with tempfile.TemporaryDirectory() as temp_dir, pushd(temp_dir):
         srpm_content_path, src_rpm_file, archive_file = prepare_srpm_test_environment(temp_dir)
 
-        def move_file_as_download(file_url: str, local_file_path: str):
+        def move_file_as_download(_file_url: str, local_file_path: str):
             """Use the local archive as downloaded file, signal success."""
             shutil.copy(archive_file, local_file_path)
             return True
 
         # mock accessing remote content and point to local files instead
         # mock the suggestion system
-        def mock_get_archives_for_package(package_name: str, **kwargs):
+        def mock_get_archives_for_package(package_name: str, **_kwargs):
             """Mock the get_archives_for_package function to return test suggestions."""
             from package_validation_tool.package.suggesting_archives import (
                 PackageRemoteArchivesSuggestions,
@@ -289,7 +290,7 @@ def test_srpm_archive_matching_function():
             output_json_path = Path(temp_dir) / "output.json"
             match_package_archives(package_name="testrpm", output_json_path=output_json_path)
 
-            with open(output_json_path, "r") as f:
+            with open(output_json_path, "r", encoding="utf-8") as f:
                 json_data = json.load(f)
 
             assert json_data["matching"]
@@ -300,14 +301,14 @@ def test_validate_system_packages_cli():
     with tempfile.TemporaryDirectory() as temp_dir, pushd(temp_dir):
         srpm_content_path, src_rpm_file, archive_file = prepare_srpm_test_environment(temp_dir)
 
-        def move_file_as_download(file_url: str, local_file_path: str):
+        def move_file_as_download(_file_url: str, local_file_path: str):
             """Use the local archive as downloaded file, signal success."""
             shutil.copy(archive_file, local_file_path)
             return True
 
         # mock accessing remote content and point to local files instead
         # mock the suggestion system
-        def mock_get_archives_for_package(package_name: str, **kwargs):
+        def mock_get_archives_for_package(package_name: str, **_kwargs):
             """Mock the get_archives_for_package function to return test suggestions."""
             from package_validation_tool.package.suggesting_archives import (
                 PackageRemoteArchivesSuggestions,
@@ -321,7 +322,7 @@ def test_validate_system_packages_cli():
             )
             return result
 
-        def mock_get_repos_for_package(package_name: str, **kwargs):
+        def mock_get_repos_for_package(package_name: str, **_kwargs):
             """Mock the get_archives_for_package function to return test suggestions."""
             result = PackageRemoteReposSuggestions()
             result.source_package_name = package_name
@@ -330,11 +331,13 @@ def test_validate_system_packages_cli():
             )
             return result
 
-        def mock_clone_side_effect(repo, target_dir=None, bare=False):
+        def mock_clone_side_effect(
+            _repo, target_dir=None, **_kwargs
+        ):  # pylint: disable=unused-argument
             assert target_dir
             # Create the target directory and test file to simulate cloned repo
             os.makedirs(target_dir, exist_ok=True)
-            with open(os.path.join(target_dir, "testfile"), "w") as f:
+            with open(os.path.join(target_dir, "testfile"), "w", encoding="utf-8") as f:
                 f.write("Test file")  # Same content as in the archive
             return True, target_dir
 

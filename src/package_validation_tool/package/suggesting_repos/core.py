@@ -236,8 +236,8 @@ def get_repos_for_package(
     # note: it is important to keep `source_package` for the lifetime of this function, because
     # internally RPMSourcepackage uses tempfile.TemporaryDirectory to keep local archive files which
     # deletes the files as soon as the (function) context is left
-    if package_type == "rpm":
-        source_package = RPMSourcepackage(package_name, srpm_file=srpm_file)
+    assert package_type == "rpm"
+    source_package = RPMSourcepackage(package_name, srpm_file=srpm_file)
 
     # fixup name of the source package (as originally it is the final package name, not the source
     # package name, e.g. `openssh-clients` instead of `openssh`); this is important for caching

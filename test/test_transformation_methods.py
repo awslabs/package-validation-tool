@@ -25,18 +25,18 @@ def test_transform_remove_url_fragment_from_spec_sources():
 
     # local archives are not modified at all (except for keeping only basename)
     assert len(transformation_result.input_local_archives) == 2
-    transformation_result.input_local_archives[0] == os.path.basename(local_archives[0])
-    transformation_result.input_local_archives[1] == os.path.basename(local_archives[1])
+    assert transformation_result.input_local_archives[0] == os.path.basename(local_archives[0])
+    assert transformation_result.input_local_archives[1] == os.path.basename(local_archives[1])
 
     assert len(transformation_result.output_local_archives) == 2
-    transformation_result.output_local_archives[0] == os.path.basename(local_archives[0])
-    transformation_result.output_local_archives[1] == os.path.basename(local_archives[1])
+    assert transformation_result.output_local_archives[0] == os.path.basename(local_archives[0])
+    assert transformation_result.output_local_archives[1] == os.path.basename(local_archives[1])
 
     # spec sources get rid of the URL fragments (everything after `#`)
     assert len(transformation_result.input_spec_sources) == 2
-    transformation_result.input_spec_sources[0] == spec_sources[0]
-    transformation_result.input_spec_sources[1] == spec_sources[1]
+    assert transformation_result.input_spec_sources[0] == spec_sources[0]
+    assert transformation_result.input_spec_sources[1] == spec_sources[1]
 
     assert len(transformation_result.output_spec_sources) == 2
-    transformation_result.output_spec_sources[0] == spec_sources[0].split("#")[0]
-    transformation_result.output_spec_sources[1] == spec_sources[1].split("#")[0]
+    assert transformation_result.output_spec_sources[0] == spec_sources[0].split("#")[0]
+    assert transformation_result.output_spec_sources[1] == spec_sources[1].split("#")[0]

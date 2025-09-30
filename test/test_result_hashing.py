@@ -38,11 +38,11 @@ def test_remotematchresult_hashing():
             "metadata": cache_meta_data,
             "result": srpm_result.to_json_dict(),
         }
-        with open(cache_file, "w") as f:
+        with open(cache_file, "w", encoding="utf-8") as f:
             json.dump(cache_entry, f, indent=2)
 
         # read cache
-        with open(cache_file, "r") as f:
+        with open(cache_file, "r", encoding="utf-8") as f:
             cache_entry = json.load(f)
 
         # validate cached data

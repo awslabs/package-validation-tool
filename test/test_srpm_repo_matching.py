@@ -19,13 +19,14 @@ TEST_DIR_PATH = os.path.dirname(__file__)
 TESTRPM_SPEC_FILE = Path(TEST_DIR_PATH) / "artefacts" / "rpm" / "testrpm.spec"
 
 
-def patched_parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool):
+def patched_parse_rpm_spec_file(spec_file: str, _fallback_plain_rpm: bool):
     """Override parameter wrt parsing, to not require rpmspec tool."""
     return parse_rpm_spec_file(spec_file, fallback_plain_rpm=True)
 
 
 def patched_prepare_rpmbuild_source(
-    src_rpm_file: str = None, package_rpmbuild_home: str = "rpm_home"
+    src_rpm_file: str = None,  # pylint: disable=unused-argument
+    package_rpmbuild_home: str = "rpm_home",
 ):
     """Perform the most basic operations to fake an rpmbuild directory."""
     os.mkdir(os.path.basename(package_rpmbuild_home))
@@ -60,7 +61,7 @@ def prepare_srpm_test_environment(temp_dir: str):
     src_rpm_file.touch()
 
     # create file testrpm-0.1/testfile
-    with open(local_src_path / "testfile", "w") as f:
+    with open(local_src_path / "testfile", "w", encoding="utf-8") as f:
         f.write("Test file")
     # zip local_src_path into testrpm-0.1.tar.gz and have a copy in the srpm directory
     archive_file = shutil.make_archive(archive_file, "gztar", local_src_path)
@@ -69,7 +70,7 @@ def prepare_srpm_test_environment(temp_dir: str):
     return srpm_content_path, src_rpm_file, archive_file
 
 
-def create_suggested_repos_json(temp_dir: str, archive_file: str):
+def create_suggested_repos_json(temp_dir: str, _archive_file: str):
     """Create a suggested repositories JSON file similar to the openssh example."""
     repos_json_path = Path(temp_dir) / "suggested_repos.json"
 
@@ -112,9 +113,11 @@ def test_srpm_repo_matching_cli():
             "package_validation_tool.package.rpm.source_package.clone_git_repo"
         ) as mock_clone_git_repo:
             # Configure mock to simulate successful cloning
-            def mock_clone_side_effect(repo, target_dir=None, bare=False):
+            def mock_clone_side_effect(
+                repo, target_dir=None, bare=False
+            ):  # pylint: disable=unused-argument
                 assert target_dir
-                with open(os.path.join(target_dir, "testfile"), "w") as f:
+                with open(os.path.join(target_dir, "testfile"), "w", encoding="utf-8") as f:
                     if "example/testrpm" in repo:
                         # let's make the first suggested repo NOT match
                         f.write("Not matching contents")

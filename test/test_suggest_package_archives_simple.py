@@ -20,13 +20,14 @@ TEST_DIR_PATH = os.path.dirname(__file__)
 TESTRPM_SPEC_FILE = Path(TEST_DIR_PATH) / "artefacts" / "rpm" / "testrpm_for_suggesting_simple.spec"
 
 
-def patched_parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool):
+def patched_parse_rpm_spec_file(spec_file: str, _fallback_plain_rpm: bool):
     """Override parameter wrt parsing, to not require rpmspec tool."""
     return parse_rpm_spec_file(spec_file, fallback_plain_rpm=True)
 
 
 def patched_prepare_rpmbuild_source(
-    src_rpm_file: str = None, package_rpmbuild_home: str = "rpm_home"
+    src_rpm_file: str = None,  # pylint: disable=unused-argument
+    package_rpmbuild_home: str = "rpm_home",
 ):
     """Perform the most basic operations to fake an rpmbuild directory."""
     os.mkdir(os.path.basename(package_rpmbuild_home))
@@ -60,7 +61,7 @@ def prepare_srpm_test_environment(target_dir: str):
     os.mkdir(files_to_archive_path)
 
     dummy_file = files_to_archive_path / "plainfile"
-    with open(dummy_file, "w") as f:
+    with open(dummy_file, "w", encoding="utf-8") as f:
         f.write("Test file")
     shutil.copy(dummy_file, srpm_content_path)
 
@@ -77,7 +78,7 @@ def test_srpm_suggest_package_archives_simple_cli():
     """Test srpm suggest-package-archives CLI on a simple package."""
     with tempfile.TemporaryDirectory() as temp_dir, pushd(temp_dir):
         found_accessible_url = False
-        srpm_content_path, src_rpm_file, archive_file_path = prepare_srpm_test_environment(temp_dir)
+        srpm_content_path, src_rpm_file, _ = prepare_srpm_test_environment(temp_dir)
 
         def patched_is_url_accessible(url: str) -> bool:
             """Return True only once for an "http(s)" address, instead of accessing internet."""
@@ -126,7 +127,7 @@ def test_srpm_suggest_package_archives_simple_cli():
                 ]
             )
 
-            with open(output_json_path, "r") as f:
+            with open(output_json_path, "r", encoding="utf-8") as f:
                 json_data = json.load(f)
 
             assert len(json_data["orig_local_archives"]) == 1

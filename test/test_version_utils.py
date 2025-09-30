@@ -129,7 +129,7 @@ def test_combined_workflow():
         # Mock the clone_git_repo function
         with patch("package_validation_tool.utils.clone_git_repo") as mock_clone_git_repo:
             # Configure mock to simulate successful cloning
-            def mock_clone_side_effect(repo, target_dir=None, bare=False):
+            def mock_clone_side_effect(repo, _target_dir=None, _bare=False):
                 # Create a unique directory for each repo URL
                 repo_hash = str(hash(repo))
                 repo_dir = os.path.join(temp_dir, repo_hash)
@@ -141,7 +141,7 @@ def test_combined_workflow():
             # Mock subprocess.run for git commands
             with patch("subprocess.run") as mock_run:
                 # Configure mock to simulate successful tag/commit verification
-                def mock_run_side_effect(*args, **kwargs):
+                def mock_run_side_effect(*args, **_kwargs):
                     mock_result = MagicMock()
                     mock_result.returncode = 0
 

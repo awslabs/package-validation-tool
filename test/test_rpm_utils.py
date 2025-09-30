@@ -35,9 +35,9 @@ def test_download_and_extract_source_package_failure():
             mock_run.side_effect = subprocess.CalledProcessError(1, "yumdownloader")
             # test may execute on non-Fedora-family OS distro, pretend the system has dnf
             get_system_install_tool.return_value = "dnf"
-            srpm, dir = download_and_extract_source_package(package_name, temp_dir)
+            srpm, content_dir = download_and_extract_source_package(package_name, temp_dir)
             assert srpm is None
-            assert dir is None
+            assert content_dir is None
 
 
 def test_get_env_with_home_dict_modification():
