@@ -1,6 +1,8 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# pylint: disable=protected-access
+
 import os
 import shutil
 import tempfile
@@ -28,7 +30,7 @@ def test_srpm_object_creation():
         src_rpm_file = Path(temp_dir) / "testrpm.src.rpm"
         src_rpm_file.touch()
 
-        def patched_parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool):
+        def patched_parse_rpm_spec_file(spec_file: str, _fallback_plain_rpm: bool):
             """Override parameter wrt parsing, to not require rpmspec tool."""
             return parse_rpm_spec_file(spec_file, fallback_plain_rpm=True)
 

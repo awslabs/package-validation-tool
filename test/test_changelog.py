@@ -1,3 +1,8 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# pylint: disable=protected-access
+
 import tempfile
 from pathlib import Path
 from unittest.mock import mock_open, patch

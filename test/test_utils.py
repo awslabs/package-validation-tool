@@ -583,7 +583,8 @@ def test_secure_tar_extractall_absolute_path_attack():
         # Verify no malicious file was created
         malicious_file = Path("/tmp/malicious_file")
         assert (
-            not malicious_file.exists() or "Absolute path attack" not in malicious_file.read_text()
+            not malicious_file.exists()
+            or "Absolute path attack" not in malicious_file.read_text(encoding="utf-8")
         )
 
 
@@ -749,7 +750,8 @@ def test_secure_unpack_archive_absolute_path_attack():
         # Verify no malicious file was created
         malicious_file = Path("/tmp/malicious_file")
         assert (
-            not malicious_file.exists() or "Absolute path attack" not in malicious_file.read_text()
+            not malicious_file.exists()
+            or "Absolute path attack" not in malicious_file.read_text(encoding="utf-8")
         )
 
 

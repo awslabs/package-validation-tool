@@ -41,11 +41,9 @@ def store_package_content(
     if package_type not in SUPPORTED_PACKAGE_TYPES:
         raise ValueError(f"Unsupported package type: {package_type}")
 
-    if package_type == "rpm":
-        source_package = RPMSourcepackage(package_name=package_name)
-        return source_package.store_package_content(output_dir=output_dir)
-
-    return False
+    assert package_type == "rpm"
+    source_package = RPMSourcepackage(package_name=package_name)
+    return source_package.store_package_content(output_dir=output_dir)
 
 
 def match_package_archives(
@@ -61,8 +59,8 @@ def match_package_archives(
     if package_type not in SUPPORTED_PACKAGE_TYPES:
         raise ValueError(f"Unsupported package type: {package_type}")
 
-    if package_type == "rpm":
-        source_package = RPMSourcepackage(package_name)
+    assert package_type == "rpm"
+    source_package = RPMSourcepackage(package_name)
 
     if input_archives_json_path is None:
         log.info(
@@ -127,8 +125,8 @@ def match_package_repos(
     if package_type not in SUPPORTED_PACKAGE_TYPES:
         raise ValueError(f"Unsupported package type: {package_type}")
 
-    if package_type == "rpm":
-        source_package = RPMSourcepackage(package_name)
+    assert package_type == "rpm"
+    source_package = RPMSourcepackage(package_name)
 
     if input_repos_json_path is None:
         log.info(
@@ -225,14 +223,10 @@ def validate_single_package(
 ) -> PackageValidationResult:
     """Analyze a single package and return the PackageValidationResult."""
 
-    assert package_type in SUPPORTED_PACKAGE_TYPES
-
-    if package_type == "rpm":
-        source_package = RPMSourcepackage(
-            package_name, srpm_file=srpm_file, install_build_deps=install_build_deps
-        )
-    else:
-        raise ValueError(f"Unsupported package type: {package_type}")
+    assert package_type == "rpm"
+    source_package = RPMSourcepackage(
+        package_name, srpm_file=srpm_file, install_build_deps=install_build_deps
+    )
 
     source_package_name = source_package.get_name()
     if source_package_name is None:

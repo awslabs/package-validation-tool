@@ -22,13 +22,14 @@ TEST_DIR_PATH = os.path.dirname(__file__)
 TESTRPM_SPEC_FILE = Path(TEST_DIR_PATH) / "artefacts" / "rpm" / "testrpm_for_suggesting_repos.spec"
 
 
-def patched_parse_rpm_spec_file(spec_file: str, fallback_plain_rpm: bool):
+def patched_parse_rpm_spec_file(spec_file: str, _fallback_plain_rpm: bool):
     """Override parameter wrt parsing, to not require rpmspec tool."""
     return parse_rpm_spec_file(spec_file, fallback_plain_rpm=True)
 
 
 def patched_prepare_rpmbuild_source(
-    src_rpm_file: str = None, package_rpmbuild_home: str = "rpm_home"
+    src_rpm_file: str = None,  # pylint: disable=unused-argument
+    package_rpmbuild_home: str = "rpm_home",
 ):
     """Perform the most basic operations to fake an rpmbuild directory."""
     os.mkdir(os.path.basename(package_rpmbuild_home))
@@ -62,7 +63,7 @@ def prepare_srpm_test_environment(target_dir: str):
     os.mkdir(files_to_archive_path)
 
     dummy_file = files_to_archive_path / "plainfile"
-    with open(dummy_file, "w") as f:
+    with open(dummy_file, "w", encoding="utf-8") as f:
         f.write("Test file")
 
     # create the archive and have a copy in the srpm directory
@@ -145,7 +146,7 @@ def mock_requests_get(*args, **kwargs):
     return mock_response
 
 
-def mock_subprocess_run_git_commands(*args, **kwargs):
+def mock_subprocess_run_git_commands(*args, **_kwargs):
     mock_result = MagicMock()
     mock_result.returncode = 0
 
@@ -172,7 +173,7 @@ def mock_subprocess_run_git_commands(*args, **kwargs):
 def test_suggest_package_repos_cli():
     """Test suggest-package-repos CLI command."""
     with tempfile.TemporaryDirectory() as temp_dir, pushd(temp_dir):
-        srpm_content_path, src_rpm_file, archive_path = prepare_srpm_test_environment(temp_dir)
+        srpm_content_path, src_rpm_file, _ = prepare_srpm_test_environment(temp_dir)
 
         def patched_is_git_repo(repo: str) -> bool:
             """Return True for specific test URLs."""
@@ -185,7 +186,7 @@ def test_suggest_package_repos_cli():
                 "https://gitlab.com/testrpm/testrpm",  # from Repology
             ]
 
-        def patched_is_url_accessible(url: str) -> bool:
+        def patched_is_url_accessible(_url: str) -> bool:
             """Always return True for URL accessibility."""
             return True
 
@@ -247,7 +248,7 @@ def test_suggest_package_repos_cli():
             )
             assert exit_code == 0
 
-            with open(output_json_path, "r") as f:
+            with open(output_json_path, "r", encoding="utf-8") as f:
                 json_data = json.load(f)
 
             # Verify all expected fields in the output
