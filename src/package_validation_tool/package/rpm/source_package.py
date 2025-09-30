@@ -783,7 +783,7 @@ class RPMSourcepackage:
             return []
         return self._spec.repourl_entries()
 
-    def get_name(self) -> str:
+    def get_name(self) -> Optional[str]:
         """
         Get name of the source package (value of the "Name" field in the package's spec file).
         """

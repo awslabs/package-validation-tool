@@ -109,7 +109,7 @@ def download_file(file_url: str, local_file_path: str):
     return False
 
 
-def extract_links(url: str) -> List[str]:
+def extract_links(url: str) -> Optional[List[str]]:
     """
     Scrape all links from the given URL (download and search for <a> HTML tags).
     Returns None in case of any exceptions (e.g., URL is inaccessible).

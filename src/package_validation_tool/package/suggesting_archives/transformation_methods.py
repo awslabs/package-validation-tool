@@ -24,7 +24,7 @@ import logging
 import os
 import re
 import tarfile
-from typing import List
+from typing import List, Optional
 from urllib.parse import urlparse, urlunparse
 
 from package_validation_tool.common import SUPPORTED_ARCHIVE_TYPES
@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 def _transform_extract_nested_archives(
     local_archives: List[str], spec_sources: List[str]
-) -> LocalArchiveTransformation:
+) -> Optional[LocalArchiveTransformation]:
     """
     If there is a single archive file which contains only archive files (i.e., nested archives), and
     there is a single corresponding Source stanza, then replace the original `local_archives` and
@@ -96,7 +96,7 @@ def _transform_extract_nested_archives(
 
 def _transform_remove_url_fragment_from_spec_sources(
     local_archives: List[str], spec_sources: List[str]
-) -> LocalArchiveTransformation:
+) -> Optional[LocalArchiveTransformation]:
     """
     This transformation potentially modifies `spec_sources` (i.e., keeps `local_archives` as is).
     The transformation checks each Source: if it is a URL with a valid schema, then a URL fragment
