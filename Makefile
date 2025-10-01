@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format type-check clean build release
+.PHONY: help install install-dev test lint format format-check type-check clean build release
 
 help:
 	@echo "Available targets:"
@@ -7,30 +7,35 @@ help:
 	@echo "  test         - Run tests"
 	@echo "  lint         - Run linting (flake8, pylint)"
 	@echo "  format       - Format code (black, isort)"
+	@echo "  format-check - Run format checking (black, isort with --check)"
 	@echo "  type-check   - Run type checking (mypy)"
 	@echo "  clean        - Clean build artifacts"
 	@echo "  build        - Build the package"
 	@echo "  release      - Build and check the package for release"
 
-install: build
+install:
 	pip install -e .
 
 install-dev:
 	pip install -e ".[dev,test]"
 
-test: lint build
-	python -m pytest
+test:
+	pytest
 
 lint:
-	python -m flake8 src test
-	python -m pylint src test
+	flake8 src test
+	pylint $(shell git ls-files '*.py')  # recommended invocation by GitHub Pylint template
 
 format:
-	python -m black src test
-	python -m isort src test
+	black src test
+	isort src test
+
+format-check:
+	black --check src test
+	isort --check src test
 
 type-check:
-	python -m mypy src
+	mypy src
 
 clean:
 	rm -rf build/
@@ -45,6 +50,7 @@ build:
 	python -m pip install build
 	python -m build
 
-release: clean build test
+release: clean build
+	python -m pip install twine
 	python -m twine check dist/*
 	@echo "Package is ready for release. Run 'python -m twine upload dist/*' to publish."
