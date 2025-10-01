@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 # Standard HTTP headers for web requests to avoid being blocked by websites
 # that filter requests with default user agents
-DEFAULT_REQUEST_HEADERS = {"User-Agent": "Mozilla/5.0 Firefox/140.0"}
+DEFAULT_REQUEST_HEADERS = {"User-Agent": "Wget/1.14 (linux-gnu)"}
 
 
 def set_default_python_socket_timeout():
