@@ -340,10 +340,12 @@ test_repology_website_structure() {
 
     # Download the page: Repology requires TLS v1.2, which is NOT available on Amazon Linux 2, so
     # the download may fail (we ignore this issue because this should succeed on newer Amazon Linux)
-    if ! curl -A "Mozilla/5.0 Firefox/140.0" -s -f "$url" -o "$temp_file"; then
-        echo "WARNING: Failed to fetch Repology page: $url"
+    if ! curl -A "Wget/1.14 (linux-gnu)" -s -f "$url" -o "$temp_file"; then
+        echo "WARNING: Failed to fetch Repology page: $url, skipping this test ..."
         return 0
     fi
+
+    echo "Test Repology website structure for example URL $url ..."
 
     # Check if Repository_links section exists
     if ! grep -q 'id="Repository_links"' "$temp_file"; then
