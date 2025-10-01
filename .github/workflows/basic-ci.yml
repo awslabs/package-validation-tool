@@ -1,0 +1,70 @@
+name: Linters, pytests, builds
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "**" ]  # all branches, not just main (useful for train of PRs)
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    # we want to use the latest advances in linters/checkers, so use latest Ubuntu and Python
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        make install-dev
+
+    - name: Check formatting with black and isort
+      run: |
+        make format-check
+
+    - name: Check types with mypy (only src, not test)
+      run: |
+        make type-check
+
+    - name: Lint with flake8 and pylint
+      run: |
+        make lint
+
+    - name: Test with pytest
+      run: |
+        make test
+
+  check_release:
+    runs-on: ubuntu-22.04  # ubuntu-latest (24.04) does NOT have Python 3.7
+    needs: test
+    strategy:
+      matrix:
+        # Python 3.7 is EOL, but it is used in e.g. Amazon Linux 2
+        python-version: ["3.7", "3.9", "3.11", "3.13"]
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+
+    - name: Check package for release
+      run: |
+        make release
