@@ -1,0 +1,26 @@
+name: TruffleHog to scan for secrets
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "**" ]  # all branches, not just main (useful for train of PRs)
+
+permissions:
+  contents: read
+
+# template adapted from github.com/marketplace/actions/trufflehog-oss#octocat-trufflehog-github-action
+jobs:
+  TruffleHog:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Secret Scanning
+      uses: trufflesecurity/trufflehog@main
+      with:
+        extra_args: --results=verified,unknown
