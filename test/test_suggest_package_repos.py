@@ -15,6 +15,8 @@ from unittest.mock import MagicMock, patch
 
 from package_validation_tool.cli import main
 from package_validation_tool.package.rpm.utils import get_single_spec_file, parse_rpm_spec_file
+from package_validation_tool.package.suggesting_repos import RemoteRepoSuggestion
+from package_validation_tool.package.suggesting_repos.core import RepoSuggester
 from package_validation_tool.package.suggesting_repos.suggestion_methods import _is_git_repo
 from package_validation_tool.utils import pushd
 
@@ -342,3 +344,53 @@ def test_is_git_repo_url_validation():
     for url in invalid_urls:
         result = _is_git_repo(url)
         assert result is False, f"Expected URL to be filtered out by validation: {url}"
+
+
+def test_suggest_repos_version_only_archive():
+    """Test that archives with version-only basenames are enhanced with package name."""
+    # Create a mock suggestion method that captures the archive basename it receives
+    captured_archive_basename = None
+
+    def mock_suggestion_method(archive_basename, spec_sources):  # pylint: disable=unused-argument
+        nonlocal captured_archive_basename
+        captured_archive_basename = archive_basename
+        return [
+            RemoteRepoSuggestion(
+                repo="https://github.com/mock/repo",
+                spec_source=None,
+                suggested_by="mock_method",
+                notes="Mock suggestion for testing",
+                confidence=1.0,
+            )
+        ]
+
+    with patch(
+        "package_validation_tool.package.suggesting_repos.core.SUGGESTION_METHODS",
+        [mock_suggestion_method],
+    ):
+        # Test case 1: Version-only archive should be enhanced
+        repo_suggester = RepoSuggester(
+            source_package_name="ec2-utils",
+            local_archives=["/tmp/v2.2.0.tar.gz"],
+            spec_sources=[],
+        )
+        # pylint: disable=protected-access
+        repo_suggester._find_suggestions_for_archive("/tmp/v2.2.0.tar.gz")
+
+        # The suggestion method should receive the enhanced basename
+        assert captured_archive_basename == "ec2-utils-v2.2.0.tar.gz"
+
+        # Reset for next test
+        captured_archive_basename = None
+
+        # Test case 2: Normal archive should not be enhanced
+        repo_suggester2 = RepoSuggester(
+            source_package_name="zlib",
+            local_archives=["/tmp/zlib-1.2.11.tar.gz"],
+            spec_sources=[],
+        )
+        # pylint: disable=protected-access
+        repo_suggester2._find_suggestions_for_archive("/tmp/zlib-1.2.11.tar.gz")
+
+        # The suggestion method should receive the original basename
+        assert captured_archive_basename == "zlib-1.2.11.tar.gz"
