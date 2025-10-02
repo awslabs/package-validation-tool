@@ -25,10 +25,11 @@ from package_validation_tool.package.suggesting_repos.suggestion_methods import 
 from package_validation_tool.package.suggesting_repos.version_utils import (
     VersionInfo,
     extract_version_from_archive_name,
+    is_version,
     verify_commit_exists,
     verify_tag_exists,
 )
-from package_validation_tool.utils import clone_git_repo
+from package_validation_tool.utils import clone_git_repo, remove_archive_suffix
 
 log = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ class RepoSuggester:
         self._suggestion_result = PackageRemoteReposSuggestions()
         self._suggestion_result.source_package_name = source_package_name
         self._suggestion_result.local_archives = [os.path.basename(x) for x in local_archives]
+        self._source_package_name = source_package_name
 
         self._local_archives = local_archives
         self._spec_sources = spec_sources
@@ -106,9 +108,23 @@ class RepoSuggester:
         local_archive_basename = os.path.basename(local_archive)
         log.info("Suggesting repos for archive %s", local_archive_basename)
 
+        # If the archive is just a version string (like `v2.2.0.tar.gz`), then prepend the package
+        # name to create an "expected" archive name (like `ec2-utils-v2.2.0.tar.gz`)
+        enhanced_archive_basename = local_archive_basename
+        if is_version(remove_archive_suffix(local_archive_basename)):
+            enhanced_archive_basename = (
+                f"{self._suggestion_result.source_package_name}-{local_archive_basename}"
+            )
+            log.info(
+                "Archive '%s' appears to contain only the version string. "
+                "Enhancing with package name for better repo suggestions: %s",
+                local_archive_basename,
+                enhanced_archive_basename,
+            )
+
         suggested_repos = []  # list of RemoteRepoSuggestion objects
         for suggestion_method in SUGGESTION_METHODS:
-            suggested_repos.extend(suggestion_method(local_archive_basename, self._spec_sources))
+            suggested_repos.extend(suggestion_method(enhanced_archive_basename, self._spec_sources))
 
         if local_archive_basename in self._suggestion_result.suggestions:
             raise RuntimeError(
