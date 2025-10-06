@@ -6,11 +6,13 @@ List of methods to suggest remote archives' URLs for local archives.
 
 Each function in this module has the following function signature:
 
-  def _suggest_*(local_archive_basename: str, spec_sources: list[str]) -> list[RemoteArchiveSuggestion]
+  def _suggest_*(package: dict[str, Any], local_archive_basename: str, spec_sources: list[str]) -> list[RemoteArchiveSuggestion]
 
-Each function takes a locally extracted-from-srpm archive and the corresponding list of this
-archive's URLs from Source stanzas in the spec file and tries one specific heuristic to find
-accessible URLs with matching remote archives.
+Each function takes a package dictionary (containing at least source_package_name), a locally
+extracted-from-srpm archive and the corresponding list of this archive's URLs from Source stanzas
+in the spec file and tries one specific heuristic to find accessible URLs with matching remote archives.
+Note that the `package` argument is not currently used by any function in this module, but is
+included for future extensibility.
 
 Each function returns a list of RemoteArchiveSuggestion objects (with the most important field being
 `remote_archive` full URL). Typically, the returned list contains only one such object. If no
@@ -24,7 +26,7 @@ local archive can be matched to multiple URLs, then the returned list contains a
 import inspect
 import logging
 import os
-from typing import List
+from typing import Any, Dict, List
 from urllib.parse import urlparse, urlunparse
 
 from package_validation_tool.common import SUPPORTED_ARCHIVE_TYPES
@@ -35,7 +37,7 @@ log = logging.getLogger(__name__)
 
 
 def _suggest_remote_archive_from_spec_sources_exact(
-    local_archive_basename: str, spec_sources: List[str]
+    _: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteArchiveSuggestion]:
     """
     Find the Source stanza(s) in spec_sources that match the basename of the local_archive and
@@ -62,7 +64,7 @@ def _suggest_remote_archive_from_spec_sources_exact(
 
 
 def _suggest_remote_archive_from_spec_sources_sep_version(
-    local_archive_basename: str, spec_sources: List[str]
+    _: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteArchiveSuggestion]:
     """
     Find the Source stanza(s) in spec_sources that match the name + version of the local_archive and
@@ -102,7 +104,7 @@ def _suggest_remote_archive_from_spec_sources_sep_version(
 
 
 def _suggest_remote_archive_from_spec_sources_ftp_to_https(
-    local_archive_basename: str, spec_sources: List[str]
+    _: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteArchiveSuggestion]:
     """
     Find FTP-based Source stanza(s) in spec_sources that match the basename of the local_archive,
@@ -137,7 +139,7 @@ def _suggest_remote_archive_from_spec_sources_ftp_to_https(
 
 
 def _suggest_remote_archive_from_known_urls_exact(
-    local_archive_basename: str, spec_sources: List[str]
+    _: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteArchiveSuggestion]:
     """
     Find the archive among known URLs and return the list of corresponding RemoteArchiveSuggestion
@@ -170,7 +172,7 @@ def _suggest_remote_archive_from_known_urls_exact(
 
 
 def _suggest_remote_archive_that_was_moved_and_recompressed(
-    local_archive_basename: str, spec_sources: List[str]
+    _: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteArchiveSuggestion]:
     """
     Find the archive that has a valid-looking but inaccessible Source stanza, by assuming that the
@@ -220,7 +222,7 @@ def _suggest_remote_archive_that_was_moved_and_recompressed(
 
 
 def _suggest_remote_archive_from_another_subdomain_url(
-    local_archive_basename: str, spec_sources: List[str]
+    _: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteArchiveSuggestion]:
     """
     Find the archive that has a valid-looking but inaccessible Source stanza, by assuming that the

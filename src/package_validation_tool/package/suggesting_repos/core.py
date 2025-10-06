@@ -106,9 +106,16 @@ class RepoSuggester:
         local_archive_basename = os.path.basename(local_archive)
         log.info("Suggesting repos for archive %s", local_archive_basename)
 
+        # Create package dictionary to pass to suggestion methods
+        package = {
+            "source_package_name": self._suggestion_result.source_package_name,
+        }
+
         suggested_repos = []  # list of RemoteRepoSuggestion objects
         for suggestion_method in SUGGESTION_METHODS:
-            suggested_repos.extend(suggestion_method(local_archive_basename, self._spec_sources))
+            suggested_repos.extend(
+                suggestion_method(package, local_archive_basename, self._spec_sources)
+            )
 
         if local_archive_basename in self._suggestion_result.suggestions:
             raise RuntimeError(
