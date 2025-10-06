@@ -128,10 +128,15 @@ class RemotePackageArchivesSuggester:
         local_archive_basename = os.path.basename(local_archive)
         log.info("Suggesting remote archives for %s", local_archive_basename)
 
+        # Create package dictionary to pass to suggestion methods
+        package = {
+            "source_package_name": self._suggestion_result.source_package_name,
+        }
+
         suggested_remote_archives = []  # list of RemoteArchiveSuggestion objects
         for suggestion_method in SUGGESTION_METHODS:
             suggested_remote_archives.extend(
-                suggestion_method(local_archive_basename, self._spec_sources)
+                suggestion_method(package, local_archive_basename, self._spec_sources)
             )
 
         assert local_archive_basename not in self._suggestion_result.suggestions

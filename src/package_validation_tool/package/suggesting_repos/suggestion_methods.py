@@ -6,10 +6,11 @@ List of methods to suggest (git) repos' URLs for local archives.
 
 Each function in this module has the following function signature:
 
-  def _suggest_*(local_archive_basename: str, spec_sources: list[str]) -> list[RemoteRepoSuggestion]
+  def _suggest_*(package: dict[str, Any], local_archive_basename: str, spec_sources: list[str]) -> list[RemoteRepoSuggestion]
 
-Each function takes a locally extracted-from-srpm archive and the list of all URLs in the spec file
-and tries one specific heuristic to find accessible repo URLs that match the local archive.
+Each function takes a package dictionary (containing at least source_package_name), a locally
+extracted-from-srpm archive and the list of all URLs in the spec file and tries one specific
+heuristic to find accessible repo URLs that match the local archive.
 
 Each function returns a list of RemoteRepoSuggestion objects (with the most important field being
 `repo` full URL). Typically, the returned list contains only one such object. If no accessible repo
@@ -23,13 +24,16 @@ import logging
 import os
 import re
 import subprocess
-from typing import List
+from typing import Any, Dict, List
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
 from package_validation_tool.package.suggesting_repos import RemoteRepoSuggestion
+from package_validation_tool.package.suggesting_repos.version_utils import (
+    is_version,
+)
 from package_validation_tool.utils import (
     DEFAULT_REQUEST_HEADERS,
     extract_links,
@@ -155,18 +159,26 @@ def _is_git_repo(repo: str) -> bool:
         return False
 
 
-def _get_project_name(archive_name: str) -> str:
+def _get_project_name(package: Dict[str, Any], local_archive_basename: str) -> str:
     """
-    Get project base name from the local archive filename (without extention and without version).
+    Get project base name from the local archive filename (without extension and without version).
+
+    If the archive basename (without extension) is just a version string (like `v2.2.0.tar.gz`),
+    then return the source package name (stripped from trailing dots and numbers).
 
     This poor-man's logic assumes that the version starts after the last "-" symbol. It also removes
     any trailing digits (and a potential dot), e.g. `python3.9` -> `python` or `redis6` -> `redis`.
     """
-    return remove_archive_suffix(archive_name).rsplit("-", 1)[0].rstrip("0123456789.")
+    archive_without_extension = remove_archive_suffix(local_archive_basename)
+
+    if "source_package_name" in package and is_version(archive_without_extension):
+        return package["source_package_name"].rstrip("0123456789.")
+
+    return archive_without_extension.rsplit("-", 1)[0].rstrip("0123456789.")
 
 
 def _suggest_repo_from_spec_sources(
-    local_archive_basename: str, spec_sources: List[str]
+    package: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteRepoSuggestion]:
     """
     Find repo-looking URLs in spec_sources (i.e. from the package spec file) that match the basename
@@ -176,7 +188,7 @@ def _suggest_repo_from_spec_sources(
     repo_results = []
     suggestion_name = inspect.stack()[0][3].lstrip("_")  # trick to get current function name
 
-    project_name = _get_project_name(local_archive_basename)
+    project_name = _get_project_name(package, local_archive_basename)
 
     # keep only those URLs that are accessible repos (currently only git repos are supported)
     repos = [x for x in spec_sources if project_name.lower() in x.lower() and _is_git_repo(x)]
@@ -196,7 +208,7 @@ def _suggest_repo_from_spec_sources(
 
 
 def _suggest_repo_from_extracted_links(
-    local_archive_basename: str, spec_sources: List[str]
+    package: Dict[str, Any], local_archive_basename: str, spec_sources: List[str]
 ) -> List[RemoteRepoSuggestion]:
     """
     Download web pages with URLs in spec_sources (i.e. from the package spec file), and then scrape
@@ -206,7 +218,7 @@ def _suggest_repo_from_extracted_links(
     repo_results = []
     suggestion_name = inspect.stack()[0][3].lstrip("_")  # trick to get current function name
 
-    project_name = _get_project_name(local_archive_basename)
+    project_name = _get_project_name(package, local_archive_basename)
 
     for spec_source in spec_sources:
         if not project_name.lower() in spec_source.lower():
@@ -240,7 +252,9 @@ def _suggest_repo_from_extracted_links(
     return repo_results
 
 
-def _suggest_repo_from_known_hostings(local_archive_basename: str, _) -> List[RemoteRepoSuggestion]:
+def _suggest_repo_from_known_hostings(
+    package: Dict[str, Any], local_archive_basename: str, _
+) -> List[RemoteRepoSuggestion]:
     """
     Guess repo URL based on the basename of the local archive, trying several well-known repo
     hosting platforms (like GitLab and GitHub). Note that spec_sources are ignored here.
@@ -248,7 +262,7 @@ def _suggest_repo_from_known_hostings(local_archive_basename: str, _) -> List[Re
     repo_results = []
     suggestion_name = inspect.stack()[0][3].lstrip("_")  # trick to get current function name
 
-    project_name = _get_project_name(local_archive_basename)
+    project_name = _get_project_name(package, local_archive_basename)
 
     repos_to_try = {
         "GitHub": f"https://github.com/{project_name}/{project_name}",
@@ -274,7 +288,9 @@ def _suggest_repo_from_known_hostings(local_archive_basename: str, _) -> List[Re
     return repo_results
 
 
-def _suggest_repo_from_github_api(local_archive_basename: str, _) -> List[RemoteRepoSuggestion]:
+def _suggest_repo_from_github_api(
+    package: Dict[str, Any], local_archive_basename: str, _
+) -> List[RemoteRepoSuggestion]:
     """
     Find repo URLs based on the basename of the local archive, by querying GitHub's public API.
     Limit returned repos to MAX_RETURNED_GITHUB_API_REPOS. Note that spec_sources are ignored here.
@@ -286,7 +302,7 @@ def _suggest_repo_from_github_api(local_archive_basename: str, _) -> List[Remote
 
     # get project base name from the local archive filename (without extention and without version);
     # this poor-man's logic assumes that the version starts after the last "-" symbol
-    project_name = remove_archive_suffix(local_archive_basename).rsplit("-", 1)[0]
+    project_name = _get_project_name(package, local_archive_basename)
 
     # Prepare headers with authentication if token is available
     headers = DEFAULT_REQUEST_HEADERS.copy()
@@ -364,7 +380,7 @@ def _suggest_repo_from_github_api(local_archive_basename: str, _) -> List[Remote
 
 
 def _suggest_repo_from_repology_website(
-    local_archive_basename: str, _
+    package: Dict[str, Any], local_archive_basename: str, _
 ) -> List[RemoteRepoSuggestion]:
     """
     Find repo URLs based on the basename of the local archive, by querying Repology website.
@@ -373,7 +389,7 @@ def _suggest_repo_from_repology_website(
     """
     suggestion_name = inspect.stack()[0][3].lstrip("_")  # trick to get current function name
 
-    project_name = _get_project_name(local_archive_basename)
+    project_name = _get_project_name(package, local_archive_basename)
 
     # Repology endpoint for project information: automatically redirects "similar" package names,
     # e.g. if project_name == "python39-cryptography" it redirects to "python-cryptography"

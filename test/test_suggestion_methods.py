@@ -33,8 +33,11 @@ def test_suggest_remote_archive_from_spec_sources_exact():
         "package_validation_tool.package.suggesting_archives.suggestion_methods.is_url_accessible",
         patched_is_url_accessible,
     ):
+        # Create mock package dictionary
+        package = {"source_package_name": "archive"}
+
         remote_archive_results = _suggest_remote_archive_from_spec_sources_exact(
-            local_archive_basename, spec_sources
+            package, local_archive_basename, spec_sources
         )
 
         assert len(remote_archive_results) == 3
@@ -66,8 +69,11 @@ def test_suggest_remote_archive_from_spec_sources_sep_version():
         "package_validation_tool.package.suggesting_archives.suggestion_methods.is_url_accessible",
         patched_is_url_accessible,
     ):
+        # Create mock package dictionary
+        package = {"source_package_name": "archive"}
+
         remote_archive_results = _suggest_remote_archive_from_spec_sources_sep_version(
-            local_archive_basename, spec_sources
+            package, local_archive_basename, spec_sources
         )
 
         assert len(remote_archive_results) == 3
@@ -91,8 +97,11 @@ def test_suggest_remote_archive_from_spec_sources_ftp_to_https():
         "package_validation_tool.package.suggesting_archives.suggestion_methods.is_url_accessible",
         patched_is_url_accessible,
     ):
+        # Create mock package dictionary
+        package = {"source_package_name": "archive"}
+
         remote_archive_results = _suggest_remote_archive_from_spec_sources_ftp_to_https(
-            local_archive_basename, spec_sources.keys()
+            package, local_archive_basename, spec_sources.keys()
         )
 
         assert len(remote_archive_results) == 2

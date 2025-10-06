@@ -342,3 +342,55 @@ def test_is_git_repo_url_validation():
     for url in invalid_urls:
         result = _is_git_repo(url)
         assert result is False, f"Expected URL to be filtered out by validation: {url}"
+
+
+def test_get_project_name_version_only_archive():
+    """Test that _get_project_name returns source package name for version-only archives."""
+    from package_validation_tool.package.suggesting_repos.suggestion_methods import (
+        _get_project_name,
+    )
+
+    # Test case 1: Version-only archive should use package name
+    package = {"source_package_name": "ec2-utils"}
+    result = _get_project_name(package, "v2.2.0.tar.gz")
+    assert result == "ec2-utils"
+
+    # Test case 2: Another version-only archive (kpatch example)
+    package = {"source_package_name": "kpatch"}
+    result = _get_project_name(package, "v0.9.10.tar.gz")
+    assert result == "kpatch"
+
+    # Test case 3: Normal archive should use original logic
+    package = {"source_package_name": "zlib"}
+    result = _get_project_name(package, "zlib-1.2.11.tar.gz")
+    assert result == "zlib"
+
+    # Test case 4: Package name with trailing digits should be stripped
+    package = {"source_package_name": "python39-cryptography"}
+    result = _get_project_name(package, "v1.2.3.tar.gz")
+    assert result == "python39-cryptography"  # Only trailing digits are stripped, not middle digits
+
+    # Test case 5: Package name with trailing dots should be stripped
+    package = {"source_package_name": "python3.9"}
+    result = _get_project_name(package, "v1.0.0.tar.gz")
+    assert result == "python"
+
+    # Test case 6: Missing source_package_name should fall back to original logic
+    package = {}
+    result = _get_project_name(package, "v1.2.3.tar.gz")
+    assert result == "v"  # Original logic: remove extension, split on "-", strip digits
+
+    # Test case 7: Normal archive with complex versioning
+    package = {"source_package_name": "openssh"}
+    result = _get_project_name(package, "openssh-8.7p1.tar.gz")
+    assert result == "openssh"
+
+    # Test case 8: Archive that starts with 'r' (also considered a version)
+    package = {"source_package_name": "redis"}
+    result = _get_project_name(package, "r6.2.1.tar.gz")
+    assert result == "redis"
+
+    # Test case 9: Archive with digits but not a version
+    package = {"source_package_name": "test-package"}
+    result = _get_project_name(package, "something123-1.0.tar.gz")
+    assert result == "something"  # Original logic applied
