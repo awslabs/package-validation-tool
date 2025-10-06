@@ -49,15 +49,9 @@ docker run -it -v $PWD:$PWD -w $PWD -eHOME=$PWD \
 ```
 
 
-Now inside the Docker container, copy the source of Package-Validation-Tool to
-an out-of-tree directory (to not accidentally override the original files
-outside of the container):
+Now inside the Docker container, install Package-Validation-Tool:
 ```sh
-mkdir -p pvt/
-cp -r setup.* configuration pyproject.toml src test pvt/
-
-cd pvt/
-python3 setup.py install
+make install
 ```
 
 Now you can execute the tool:
@@ -83,19 +77,18 @@ package-validation-tool store-package -p zlib -o zlib/
 # 2. Match files in local archive against detected upstream archives
 package-validation-tool match-package-archives -p zlib -o zlib-match-archives.json
 
-# zlib-match-archives.json looks like this (remote archive wasn't found!):
+# zlib-match-archives.json looks like this (remote archive was found):
 #
 # {
-#   "matching": false,
-#   "archives": {
+#   "matching": true,
+#   "results": {
 #     "zlib-1.2.11.tar.xz": {
-#       "remote_archive": null,
-#       "matched": false
+#       "remote_archive": "https://www.zlib.net/fossils/zlib-1.2.11.tar.gz",
+#       "matched": true,
+#       "files_total": 253,
+#       "conflicts": {}
 #     }
-#   },
-#   "unaccessible_spec_archives": [
-#     "https://www.zlib.net/zlib-1.2.11.tar.xz"
-#   ]
+#   }
 # }
 
 
@@ -106,7 +99,7 @@ package-validation-tool match-package-repos -p zlib -o zlib-match-repos.json
 #
 # {
 #   "matching": true,
-#   "archives": {
+#   "results": {
 #     "zlib-1.2.11.tar.xz": [
 #       {
 #         "remote_repo": "https://github.com/madler/zlib",
