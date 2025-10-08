@@ -57,7 +57,8 @@ PVT_FILE_MATCHER_DIFFS_PATH = "PVT_FILE_MATCHER_DIFFS_PATH"
 def _collect_file_match_statistics(
     result_object,
     file_matcher: FileMatcher,
-    archive_path: str,
+    local_extract_dir: str,
+    remote_extract_dir: str,
     package_name: str,
     local_archive_basename: str,
 ) -> None:
@@ -71,7 +72,8 @@ def _collect_file_match_statistics(
     Args:
         result_object: Either RemoteRepoResult or RemoteArchiveResult object to populate
         file_matcher: FileMatcher object containing the comparison results
-        archive_path: Path to the local archive directory (for relative path calculation)
+        local_extract_dir: Path to the local archive directory (for relative path calculation)
+        remote_extract_dir: Path to the remote archive directory (for diff file saving)
         package_name: Name of the package (for diff file saving)
         local_archive_basename: Basename of the local archive (for diff file saving)
     """
@@ -84,7 +86,7 @@ def _collect_file_match_statistics(
         result_object.files_no_counterpart += int(state == FileMatchState.NO_COUNTERPART)
 
         if state != FileMatchState.MATCHING:
-            relative_file_path = str(Path(file_path).relative_to(archive_path))
+            relative_file_path = str(Path(file_path).relative_to(local_extract_dir))
             result_object.conflicts[relative_file_path] = state.name
 
             if state == FileMatchState.DIFFERENT and os.environ.get(PVT_FILE_MATCHER_DIFFS_PATH):
@@ -98,9 +100,14 @@ def _collect_file_match_statistics(
                 dst_file_path = f"{dst_path}/{relative_file_path}"
                 Path(dst_file_path).parent.mkdir(parents=True, exist_ok=True)
 
-                # For archive matching, we need to get the temporary directories from the calling context
-                # This will be handled by the caller providing the appropriate paths
-                # For now, we'll skip the file copying part for archives - it can be added later if needed
+                shutil.copy(
+                    Path(f"{local_extract_dir}/{relative_file_path}"),
+                    f"{dst_file_path}.arch",
+                )
+                shutil.copy(
+                    Path(f"{remote_extract_dir}/{relative_file_path}"),
+                    f"{dst_file_path}.repo",
+                )
 
     # Calculate ratios
     if result_object.files_total > 0:
@@ -417,6 +424,7 @@ class RPMSourcepackage:
                                 archive_result,
                                 fm,
                                 local_extract_dir,
+                                remote_extract_dir,
                                 self.package_name,
                                 local_archive_basename,
                             )
@@ -691,6 +699,7 @@ class RPMSourcepackage:
                                 repo_result,
                                 fm,
                                 tmpdir_archive,
+                                tmpdir_repo,
                                 self.package_name,
                                 local_archive_basename,
                             )
