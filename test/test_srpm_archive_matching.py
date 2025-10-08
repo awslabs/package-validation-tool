@@ -6,10 +6,15 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from package_validation_tool.cli import main
-from package_validation_tool.package.rpm.source_package import RPMSourcepackage
+from package_validation_tool.matching.file_matching import FileMatchState
+from package_validation_tool.package import RemoteArchiveResult
+from package_validation_tool.package.rpm.source_package import (
+    RPMSourcepackage,
+    _collect_file_match_statistics,
+)
 from package_validation_tool.package.rpm.utils import get_single_spec_file, parse_rpm_spec_file
 from package_validation_tool.package.suggesting_archives import RemoteArchiveSuggestion
 from package_validation_tool.package.suggesting_repos import (
@@ -627,3 +632,65 @@ def test_validate_system_packages_cli():
             assert repo_match["commit_hash"] == "abc123def456"
             assert repo_match["tag"] == "v0.1"
             assert repo_match["accessible"] is True
+
+
+def test_collect_file_match_statistics_diffs_functionality():
+    """Test that _collect_file_match_statistics copies differing files to PVT_FILE_MATCHER_DIFFS_PATH."""
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Set up directories and files
+        local_extract_dir = Path(temp_dir) / "local"
+        remote_extract_dir = Path(temp_dir) / "remote"
+        diffs_output_dir = Path(temp_dir) / "diffs"
+
+        local_extract_dir.mkdir()
+        remote_extract_dir.mkdir()
+        diffs_output_dir.mkdir()
+
+        # Create test files with different content
+        test_file = "subdir/test.txt"
+        local_file = local_extract_dir / test_file
+        remote_file = remote_extract_dir / test_file
+
+        local_file.parent.mkdir(parents=True)
+        remote_file.parent.mkdir(parents=True)
+
+        local_file.write_text("local content")
+        remote_file.write_text("remote content")
+
+        # Create mock FileMatcher with different file state
+        mock_file_matcher = Mock()
+        mock_file_matcher.state_dict = {str(local_file): FileMatchState.DIFFERENT}
+
+        # Create result object
+        result_object = RemoteArchiveResult(remote_archive="test://example.com/test.tar.gz")
+
+        # Test with PVT_FILE_MATCHER_DIFFS_PATH set
+        with patch.dict(os.environ, {"PVT_FILE_MATCHER_DIFFS_PATH": str(diffs_output_dir)}):
+            _collect_file_match_statistics(
+                result_object=result_object,
+                file_matcher=mock_file_matcher,
+                local_extract_dir=str(local_extract_dir),
+                remote_extract_dir=str(remote_extract_dir),
+                package_name="testpkg",
+                local_archive_basename="testpkg-1.0.tar.gz",
+            )
+
+        # Verify statistics were collected
+        assert result_object.files_total == 1
+        assert result_object.files_different == 1
+        assert result_object.files_matched == 0
+        assert "subdir/test.txt" in result_object.conflicts
+
+        # Verify diff files were created
+        expected_arch_file = (
+            diffs_output_dir / "testpkg" / "testpkg-1.0.tar.gz" / "subdir" / "test.txt.arch"
+        )
+        expected_repo_file = (
+            diffs_output_dir / "testpkg" / "testpkg-1.0.tar.gz" / "subdir" / "test.txt.repo"
+        )
+
+        assert expected_arch_file.exists(), f"Expected .arch file not found: {expected_arch_file}"
+        assert expected_repo_file.exists(), f"Expected .repo file not found: {expected_repo_file}"
+        assert expected_arch_file.read_text() == "local content"
+        assert expected_repo_file.read_text() == "remote content"
