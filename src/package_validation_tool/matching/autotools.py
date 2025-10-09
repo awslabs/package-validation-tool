@@ -450,6 +450,64 @@ class AutotoolsRunner:
 
         return tool_paths
 
+    def _apply_autoconf_2_69_patch(self, extract_dir: Path, version: str) -> bool:
+        """
+        Apply special patch for autoconf version 2.69 (runstatedir backport).
+
+        Many OS distros (AL, Fedora, Debian) ship with a patched autoconf 2.69, and package
+        maintainers use this patched version when running autotools. We apply the same patch
+        to ensure autoconf-generated files are exactly the same as in distro packages.
+
+        Args:
+            extract_dir: Path to the extracted autoconf source directory
+            version: Version string of autoconf
+
+        Returns:
+            True if patch was applied successfully, False otherwise
+        """
+        # Check if upstream archive contains runstatedir (meaning upstream used patched autoconf)
+        configure_file = self.package_archive_dir / "configure"
+        if configure_file.is_file():
+            try:
+                with open(configure_file, "r", encoding="utf-8", errors="ignore") as f:
+                    configure_content = f.read()
+                if "runstatedir" not in configure_content:
+                    log.info(
+                        "Upstream archive seems to use unpatched autoconf, not applying the 'runstatedir' patch"
+                    )
+                    return True
+            except Exception as e:
+                log.warning("Could not read configure file %s: %r", configure_file, e)
+
+        log.info(
+            "Applying patch for autoconf %s (special case of runstatedir backport)",
+            version,
+        )
+
+        patch_file = AUTOTOOLS_PATCHES_DIR / "autoconf-2.69-backport-runstatedir-option.patch"
+        if not patch_file.is_file():
+            log.error("Cannot find autoconf patch %s", patch_file)
+            return False
+
+        # Apply the patch
+        with open(patch_file, "r", encoding="utf-8") as f:
+            patch_content = f.read()
+
+        patch_result = subprocess.run(
+            ["patch", "-p1"],
+            input=patch_content,
+            cwd=str(extract_dir),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if patch_result.returncode != 0:
+            log.error("Failed to apply patch to autoconf %s: %s", version, patch_result.stderr)
+            return False
+
+        log.info("Successfully applied patch to autoconf %s", version)
+        return True
+
     def _install_package(self, package_name: str, version: str) -> Optional[str]:
         """Install a specific Autotools package. Returns path to the installed bin dir."""
         archive_name = f"{package_name}-{version}.tar.gz"
@@ -476,35 +534,8 @@ class AutotoolsRunner:
                 install_prefix = extract_dir / "installed"
 
                 if package_name == "autoconf" and version == AUTOCONF_VERSION_TO_PATCH:
-                    log.info(
-                        "Applying patch for autoconf %s (special case of runstatedir backport)",
-                        version,
-                    )
-
-                    patch_file = (
-                        AUTOTOOLS_PATCHES_DIR / "autoconf-2.69-backport-runstatedir-option.patch"
-                    )
-                    if not patch_file.is_file():
-                        log.error("Cannot find autoconf patch %s", patch_file)
+                    if not self._apply_autoconf_2_69_patch(extract_dir, version):
                         return None
-
-                    # Apply the patch
-                    with open(patch_file, "r", encoding="utf-8") as f:
-                        patch_content = f.read()
-
-                    patch_result = subprocess.run(
-                        ["patch", "-p1"],
-                        input=patch_content,
-                        text=True,
-                        capture_output=True,
-                        check=False,
-                    )
-                    if patch_result.returncode != 0:
-                        log.error(
-                            "Failed to apply patch to autoconf %s: %s", version, patch_result.stderr
-                        )
-                        return None
-                    log.info("Successfully applied patch to autoconf %s", version)
 
                 # Run build steps
                 build_steps = [
