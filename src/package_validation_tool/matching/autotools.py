@@ -508,6 +508,96 @@ class AutotoolsRunner:
         log.info("Successfully applied patch to autoconf %s", version)
         return True
 
+    def _replace_with_special_libtool_version(self, extract_dir: Path) -> bool:
+        """
+        Replace extracted libtool with special version from autotools-mirror repository.
+
+        This is needed for libtool 2.4.6 to ensure we use the exact same version
+        that was used to generate the package's autotools files.
+
+        Args:
+            extract_dir: Path to the extracted libtool source directory
+
+        Returns:
+            True if replacement was successful, False otherwise
+        """
+        log.info("Replacing libtool 2.4.6 with special version from autotools-mirror repository")
+
+        # Check if upstream ltmain.sh contains the specific version string
+        ltmain_file = self.package_archive_dir / "build-aux" / "ltmain.sh"
+        if ltmain_file.is_file():
+            try:
+                with open(ltmain_file, "r", encoding="utf-8", errors="ignore") as f:
+                    ltmain_content = f.read()
+                if "2.4.6.42-b88ce-dirty" not in ltmain_content:
+                    log.info(
+                        "Did not find '2.4.6.42-b88ce-dirty' in upstream ltmain.sh - skipping special libtool replacement"
+                    )
+                    return True
+            except Exception as e:
+                log.warning("Could not read ltmain.sh file %s: %r", ltmain_file, e)
+        else:
+            log.info(
+                "ltmain.sh file not found at %s - skipping special libtool replacement", ltmain_file
+            )
+            return True
+
+        commands = [
+            ["rm", "-rf", "./*"],
+            ["git", "clone", "https://github.com/autotools-mirror/libtool", "."],
+            ["git", "checkout", "b88cebd510add4420dd8f5367e3cc6e6e1f267cd"],
+            ["patch", "-Np1", "-i", str(AUTOTOOLS_PATCHES_DIR / "libtool-2.4.6-no_hostname.patch")],
+            ["git", "clone", "--depth", "1", "https://github.com/coreutils/gnulib", "gnulib"],
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "https://github.com/gnulib-modules/bootstrap.git",
+                "gnulib-bootstrap",
+            ],
+            ["git", "submodule", "init"],
+            ["git", "config", "--local", "submodule.gnulib.url", "./gnulib"],
+            ["git", "config", "--local", "submodule.gl-mod/bootstrap.url", "./gnulib-bootstrap"],
+            ["git", "-c", "protocol.file.allow=always", "submodule", "update"],
+            ["./bootstrap"],
+        ]
+
+        for i, cmd in enumerate(commands, 1):
+            log.debug("Running command %d/%d: %s", i, len(commands), " ".join(cmd))
+
+            # Special handling for rm command with shell expansion
+            if cmd[0] == "rm":
+                result = subprocess.run(
+                    "find . -mindepth 1 -delete",
+                    shell=True,
+                    cwd=str(extract_dir),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            else:
+                # Set up environment with MAKEINFO=true
+                # see https://stackoverflow.com/questions/48071270/how-to-disable-automake-docs
+                cmd_env = os.environ.copy()
+                cmd_env["MAKEINFO"] = "/usr/bin/true"
+
+                result = subprocess.run(
+                    cmd,
+                    cwd=str(extract_dir),
+                    env=cmd_env,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+
+            if result.returncode != 0:
+                log.error("Command failed: %s\nStderr: %s", " ".join(cmd), result.stderr)
+                return False
+
+        log.info("Successfully replaced libtool 2.4.6 with special version")
+        return True
+
     def _install_package(self, package_name: str, version: str) -> Optional[str]:
         """Install a specific Autotools package. Returns path to the installed bin dir."""
         archive_name = f"{package_name}-{version}.tar.gz"
@@ -533,6 +623,10 @@ class AutotoolsRunner:
             with pushd(str(extract_dir)):
                 install_prefix = extract_dir / "installed"
 
+                if package_name == "libtool" and version == "2.4.6":
+                    if not self._replace_with_special_libtool_version(extract_dir):
+                        return None
+
                 if package_name == "autoconf" and version == AUTOCONF_VERSION_TO_PATCH:
                     if not self._apply_autoconf_2_69_patch(extract_dir, version):
                         return None
@@ -540,8 +634,9 @@ class AutotoolsRunner:
                 # Run build steps
                 build_steps = [
                     (["./configure", f"--prefix={install_prefix}"], "Configure"),
-                    (["make"], "Make"),
-                    (["make", "install"], "Make install"),
+                    # see https://stackoverflow.com/questions/48071270/how-to-disable-automake-docs
+                    (["make", "MAKEINFO=/usr/bin/true"], "Make"),
+                    (["make", "install", "MAKEINFO=/usr/bin/true"], "Make install"),
                 ]
 
                 for cmd, step_name in build_steps:

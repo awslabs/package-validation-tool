@@ -12,13 +12,14 @@ RUN dnf install -y \
 
 # Typical package build dependencies, and replace gnupg minimal with gnupg
 RUN dnf install -y  --allowerasing \
-    automake \
     autoconf \
+    automake \
     gcc \
-    git \
     gettext \
     gettext-devel \
+    git \
     gnupg2 \
+    help2man \
     libtool \
     make
 
