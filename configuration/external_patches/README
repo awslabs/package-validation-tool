@@ -2,3 +2,6 @@ Patches are taken from:
 
 - autoconf-2.69-backport-runstatedir-option.patch (GNU GPL license):
   https://src.fedoraproject.org/rpms/autoconf/raw/f34/f/autoconf-2.69-backport-runstatedir-option.patch
+
+- libtool-2.4.6-no_hostname.patch (GNU GPLv2 license):
+  https://gitlab.archlinux.org/archlinux/packaging/packages/libtool/-/blob/2.4.6+42+gb88cebd5-16/no_hostname.patch
