@@ -178,25 +178,34 @@ class RPMSourcepackage:
 
         # download source package, and extract, in content directory
         with pushd(self._storage_dir__.name):
-            self._srpm_file_path__, self._srpm_content_dir__ = download_and_extract_source_package(
-                self.package_name, srpm_file=self._srpm_file_path__
-            )
-        if not self._srpm_file_path__ or not self._srpm_content_dir__:
-            return False
+            try:
+                self._srpm_file_path__, self._srpm_content_dir__ = (
+                    download_and_extract_source_package(
+                        self.package_name, srpm_file=self._srpm_file_path__
+                    )
+                )
+            except RuntimeError as e:
+                log.error("Failed to download and extract source package: %s", e)
+                return False
+
         self._srpm_file_path_sha256sum = hash256sum(self._srpm_file_path__)
 
         if self._install_build_deps__ is not InstallationDecision.NO:
             try:
                 install_build_dependencies(self._srpm_file_path__)
             except RuntimeError as e:
+                if self._install_build_deps__ is InstallationDecision.ALWAYS:
+                    log.error(
+                        "Failed to install build dependencies for package %s with %s",
+                        self.package_name,
+                        e,
+                    )
+                    return False
                 log.warning(
-                    "Failed to install build dependencies for package %s with %s",
+                    "Failed to install build dependencies for package %s with %s, ignoring and continuing",
                     self.package_name,
                     e,
                 )
-                if self._install_build_deps__ is InstallationDecision.ALWAYS:
-                    return False
-                log.info("Ignoring build dependency installation failure, continuing")
 
         # prepare package source code
         try:
@@ -221,14 +230,14 @@ class RPMSourcepackage:
             spec_file = get_single_spec_file(self._srpm_content_dir__)
 
         if not spec_file:
-            log.warning("Failed to find spec file for package %s", self.package_name)
+            log.error("Failed to find spec file for package %s", self.package_name)
             return False
 
         # setup spec file object for this source package
         try:
             self._spec = RPMSpec(spec_file=spec_file, fallback_plain_rpm=True)
         except RPMSpecError as e:
-            log.warning(
+            log.error(
                 "Failed to parse spec file %s of package %s with %s",
                 spec_file,
                 self.package_name,
