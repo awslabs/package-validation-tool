@@ -7,6 +7,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from package_validation_tool.package.rpm.utils import (
     download_and_extract_source_package,
     get_env_with_home,
@@ -26,7 +28,7 @@ def test_get_package_basename():
 
 
 def test_download_and_extract_source_package_failure():
-    """Test the download_and_extract_source_package function with a failed download or extraction"""
+    """Test the download_and_extract_source_package function with a failed download - should raise RuntimeError"""
     package_name = "gawk-5.1.0-3.0.3.x86_64.rpm"
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch("subprocess.run") as mock_run, patch(
@@ -35,9 +37,9 @@ def test_download_and_extract_source_package_failure():
             mock_run.side_effect = subprocess.CalledProcessError(1, "yumdownloader")
             # test may execute on non-Fedora-family OS distro, pretend the system has dnf
             get_system_install_tool.return_value = "dnf"
-            srpm, content_dir = download_and_extract_source_package(package_name, temp_dir)
-            assert srpm is None
-            assert content_dir is None
+
+            with pytest.raises(RuntimeError, match="Failed to download source package"):
+                download_and_extract_source_package(package_name, temp_dir)
 
 
 def test_get_env_with_home_dict_modification():

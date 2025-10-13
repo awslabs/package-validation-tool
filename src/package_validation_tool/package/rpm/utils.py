@@ -201,10 +201,13 @@ def download_and_extract_source_package(
     package_name: str,
     content_directory: str = "source_rpm_content",
     srpm_file: Optional[str] = None,
-) -> Tuple[Optional[str], Optional[str]]:
+) -> Tuple[str, str]:
     """
     Download the source RPM file for the given package and extract the source files in CWD.
     Returns a tuple with the location to the .src.rpm file and the directory with the package content
+
+    Raises:
+        RuntimeError: If download, extraction, or file validation fails
     """
 
     if srpm_file is None:
@@ -235,8 +238,7 @@ def download_and_extract_source_package(
                 check=True,
             )
         except subprocess.CalledProcessError as e:
-            log.warning("Failed to download source package for %s with %r", package_name, e)
-            return None, None
+            raise RuntimeError(f"Failed to download source package for {package_name}: {e}") from e
 
         # extract the source files from the source RPM file
         src_rpm_files = glob.glob(os.path.join(os.getcwd(), "*.src.rpm"))
@@ -279,7 +281,7 @@ def download_and_extract_source_package(
         return src_rpm_file, abs_content_directory
 
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"{e}\n{e.stderr}") from e
+        raise RuntimeError(f"Extraction failed for package {package_name}: {e}\n{e.stderr}") from e
 
 
 def get_env_with_home(new_home_var: str):
