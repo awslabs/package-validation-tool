@@ -14,15 +14,17 @@ RUN dnf install -y \
 
 # Typical package build dependencies
 RUN dnf install -y \
-    automake \
     autoconf \
+    automake \
     gcc \
-    git \
     gettext \
     gettext-devel \
+    git \
     gnupg2 \
+    hostname \
     libtool \
-    make
+    make \
+    perl-Time-HiRes
 
 # Python dependencies to install the tool
 RUN dnf install -y \

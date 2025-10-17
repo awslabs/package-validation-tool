@@ -12,15 +12,17 @@ RUN dnf install -y \
 
 # Typical package build dependencies, and replace gnupg minimal with gnupg
 RUN dnf install -y  --allowerasing \
-    automake \
     autoconf \
+    automake \
     gcc \
-    git \
     gettext \
     gettext-devel \
+    git \
     gnupg2 \
+    hostname \
     libtool \
-    make
+    make \
+    perl-Time-HiRes
 
 # Python dependencies to install the tool
 RUN dnf install -y \
