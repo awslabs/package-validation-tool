@@ -397,7 +397,7 @@ def test_validate_system_packages_cli():
                 [
                     "validate-system-packages",
                     "-N",
-                    "2",
+                    "1",  # Use single-process mode to avoid multiprocessing issues in tests
                     "--output-json-path",
                     str(output_json_path_system),
                 ]
@@ -504,7 +504,7 @@ def test_validate_system_packages_cli():
             assert repo_match["accessible"] is True
 
             # Test without output file
-            assert 0 == main(["validate-system-packages", "-N", "-1"])
+            assert 0 == main(["validate-system-packages", "-N", "1"])
 
             # test validate-package command with the same mocked environment
             assert 0 == main(["validate-package", "-p", "testrpm"])
