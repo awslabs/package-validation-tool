@@ -27,6 +27,8 @@ def test_extract_version_from_archive_name():
         ("v2.2.0.tar.gz", "2_2_0", "", "", False),
         # Add a test case with a commit hash
         ("example-abcdef123456.tar.gz", "abcdef123456", "", "", True),
+        # Add a test case with a g-prefixed commit hash (from git-describe)
+        ("glibc-2.42-21-g7a8f3c6ee4.tar.xz", "7a8f3c6ee4", "", "", True),
     ]
 
     for (
@@ -119,6 +121,13 @@ def test_combined_workflow():
         (
             "clknetsim-f00531.tar.gz",
             "https://gitlab.com/chrony/clknetsim",
+            "f00531bc9f652a6eb6ecfe0ad73da511c08c9936",
+            "f00531bc9f652a6eb6ecfe0ad73da511c08c9936",
+        ),
+        # Version with g-prefixed commit hash (from git-describe)
+        (
+            "example-gf00531.tar.gz",
+            "https://github.com/example/example",
             "f00531bc9f652a6eb6ecfe0ad73da511c08c9936",
             "f00531bc9f652a6eb6ecfe0ad73da511c08c9936",
         ),

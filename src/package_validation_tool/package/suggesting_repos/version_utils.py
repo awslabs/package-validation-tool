@@ -43,18 +43,24 @@ def is_valid_date_format(date_str: str) -> bool:
         return False
 
 
-def is_commit_hash(hash_str: str) -> bool:
-    if len(hash_str) < 6 or len(hash_str) > 40:
-        return False
+def is_commit_hash(hash_str: str) -> Tuple[bool, str]:
+    """Check if a string is a commit hash, optionally with 'g' prefix from git-describe."""
+
+    # Remove 'g' prefix if present (from git-describe command)
+    actual_hash = hash_str[1:] if hash_str.startswith("g") else hash_str
+
+    if len(actual_hash) < 6 or len(actual_hash) > 40:
+        return False, ""
 
     # Check if all characters are hexadecimal
-    hex_chars_only = all(c in "0123456789abcdef" for c in hash_str)
+    hex_chars_only = all(c in "0123456789abcdef" for c in actual_hash)
 
     # Check if at least one char is a letter (a-f); otherwise it's better classified as a version/tag
     # For example, "sqlite-autoconf-3400000.tar.gz" has a version (without dots), not a commit hash
-    has_alpha = any(c in "abcdef" for c in hash_str)
+    has_alpha = any(c in "abcdef" for c in actual_hash)
 
-    return hex_chars_only and has_alpha
+    is_valid_hash = hex_chars_only and has_alpha
+    return is_valid_hash, actual_hash if is_valid_hash else ""
 
 
 def is_version(version_str: str) -> bool:
@@ -187,9 +193,10 @@ def extract_version_from_archive_name(source_archive: str) -> VersionInfo:
                 continue
 
             # Step 2.b.ii: Check if it's a commit hash (hexadecimal with at least 6 symbols)
-            if is_commit_hash(potential_version):
+            is_hash, actual_commit_hash = is_commit_hash(potential_version)
+            if is_hash:
                 version_is_commit_hash = True
-                version = potential_version
+                version = actual_commit_hash
                 break
 
             # Step 2.b.iii: Check if it looks like a version
