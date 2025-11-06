@@ -397,37 +397,47 @@ def validate_system_packages(
 
     all_packages_valid = True
     try:
-        with mp.Pool(processes=nr_processes) as pool:
-            # Create a partial function with the additional parameters
-            validate_func = partial(
-                validate_single_package,
-                autotools_dir=autotools_dir,
-                apply_autotools=apply_autotools,
-            )
-            results = pool.map(validate_func, combined_packages)
+        if nr_processes == 1:  # this is important for pytests, as they can't handle mp well
+            results = []
+            for package_name in combined_packages:
+                result = validate_single_package(
+                    package_name,
+                    autotools_dir=autotools_dir,
+                    apply_autotools=apply_autotools,
+                )
+                results.append(result)
+        else:
+            with mp.Pool(processes=nr_processes) as pool:
+                # Create a partial function with the additional parameters
+                validate_func = partial(
+                    validate_single_package,
+                    autotools_dir=autotools_dir,
+                    apply_autotools=apply_autotools,
+                )
+                results = pool.map(validate_func, combined_packages)
 
-            log.debug("Obtained %d results", len(results))
-            for package_validation_result in results:
-                package_name = package_validation_result.package_name
-                package_data[package_name] = package_validation_result
+        log.debug("Obtained %d results", len(results))
+        for package_validation_result in results:
+            package_name = package_validation_result.package_name
+            package_data[package_name] = package_validation_result
 
-                package_stats["total"] += 1
-                package_stats["valid"] += 1 if package_validation_result.valid else 0
-                package_stats["invalid"] += 0 if package_validation_result.valid else 1
-                if not package_validation_result.srpm_available:
-                    package_stats["unavailable_srpm"] += 1
-                if not package_validation_result.spec_valid:
-                    package_stats["spec_invalid"] += 1
+            package_stats["total"] += 1
+            package_stats["valid"] += 1 if package_validation_result.valid else 0
+            package_stats["invalid"] += 0 if package_validation_result.valid else 1
+            if not package_validation_result.srpm_available:
+                package_stats["unavailable_srpm"] += 1
+            if not package_validation_result.spec_valid:
+                package_stats["spec_invalid"] += 1
 
-                if package_stats["total"] % 100 == 0:
-                    log.info(
-                        "Processed %d packages (%d valid, %d invalid)",
-                        package_stats["total"],
-                        package_stats["valid"],
-                        package_stats["invalid"],
-                    )
+            if package_stats["total"] % 100 == 0:
+                log.info(
+                    "Processed %d packages (%d valid, %d invalid)",
+                    package_stats["total"],
+                    package_stats["valid"],
+                    package_stats["invalid"],
+                )
 
-            all_packages_valid = all(result.valid for result in package_data.values())
+        all_packages_valid = all(result.valid for result in package_data.values())
     except Exception:
         log.exception("Received an error, aborting")
         all_packages_valid = False
