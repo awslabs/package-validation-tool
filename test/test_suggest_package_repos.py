@@ -86,26 +86,48 @@ def mock_requests_get(*args, **kwargs):
 
     if url == "https://api.github.com/search/repositories":
         # Handle GitHub API requests
-        # Extract the project name from the query parameters
-        project_name = kwargs.get("params", {}).get("q", "testrpm")
+        query = kwargs.get("params", {}).get("q", "testrpm")
 
-        # Create mock GitHub API response data
-        mock_data = {
-            "items": [
-                {
-                    "html_url": f"https://github.com/{project_name}/{project_name}",
-                    "name": project_name,
-                    "full_name": f"{project_name}/{project_name}",
-                    "description": f"Test repository for {project_name}",
-                },
-                {
-                    "html_url": f"https://github.com/everything/{project_name}",
-                    "name": project_name,
-                    "full_name": f"everything/{project_name}",
-                    "description": f"Another test repository for {project_name}",
-                },
-            ]
-        }
+        # Handle the format "testrpm archived:false" or "testrpm archived:true"
+        if " archived:" in query:
+            project_name = query.split(" archived:")[0]
+            archived_param = query.split(" archived:")[1]
+        else:
+            project_name = query
+            archived_param = "false"  # default
+
+        # Return different results based on archived parameter
+        if archived_param == "true":
+            # Return archived repository
+            mock_data = {
+                "items": [
+                    {
+                        "html_url": f"https://github.com/archived/{project_name}",
+                        "name": project_name,
+                        "full_name": f"archived/{project_name}",
+                        "description": f"Archived test repository for {project_name}",
+                    }
+                ]
+            }
+        else:
+            # Return non-archived repositories
+            mock_data = {
+                "items": [
+                    {
+                        "html_url": f"https://github.com/{project_name}/{project_name}",
+                        "name": project_name,
+                        "full_name": f"{project_name}/{project_name}",
+                        "description": f"Test repository for {project_name}",
+                    },
+                    {
+                        "html_url": f"https://github.com/everything/{project_name}",
+                        "name": project_name,
+                        "full_name": f"everything/{project_name}",
+                        "description": f"Another test repository for {project_name}",
+                    },
+                ]
+            }
+
         mock_response.json.return_value = mock_data
 
     elif url.startswith("https://repology.org/project/") and url.endswith("/information"):
@@ -181,6 +203,7 @@ def test_suggest_package_repos_cli():
                 # GitHub URLs (from spec sources, known hostings, github api, repology)
                 "https://github.com/testrpm/testrpm",
                 "https://github.com/everything/testrpm",  # from GitHub API
+                "https://github.com/archived/testrpm",  # from GitHub API archived search
                 # Other git repos
                 "https://example.com/git/testrpm.git",
                 "https://gitlab.com/testrpm/testrpm",  # from Repology
@@ -261,7 +284,7 @@ def test_suggest_package_repos_cli():
             assert "testrpm-0.1.tar" in json_data["suggestions"]
             suggestions = json_data["suggestions"]["testrpm-0.1.tar"]
 
-            assert len(suggestions) == 9
+            assert len(suggestions) == 10
 
             for suggestion in suggestions:
                 # The mock_subprocess_run_git_commands function returns "abcdef1234567890" for tag "v0.1"
@@ -275,6 +298,8 @@ def test_suggest_package_repos_cli():
                         "suggest_repo_from_repology_website",
                     ]
                 elif suggestion["repo"] == "https://github.com/everything/testrpm":
+                    assert suggestion["suggested_by"] in ["suggest_repo_from_github_api"]
+                elif suggestion["repo"] == "https://github.com/archived/testrpm":
                     assert suggestion["suggested_by"] in ["suggest_repo_from_github_api"]
                 elif suggestion["repo"] == "https://gitlab.com/testrpm/testrpm":
                     assert suggestion["suggested_by"] in [
