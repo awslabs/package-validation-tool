@@ -176,6 +176,9 @@ def _get_project_name(package: Dict[str, Any], local_archive_basename: str) -> s
     """
 
     def _normalize_project_name(name: str) -> str:
+        if len(name.rstrip("0123456789")) <= 1:
+            # this covers cases like "m4", but skips cases like "R1.2.3" (must return "R")
+            return name
         return name.rstrip("0123456789.")
 
     archive_without_extension = remove_archive_suffix(local_archive_basename)
@@ -328,8 +331,6 @@ def _suggest_repo_from_github_api(
     """
     suggestion_name = inspect.stack()[0][3].lstrip("_")  # trick to get current function name
 
-    # get project base name from the local archive filename (without extention and without version);
-    # this poor-man's logic assumes that the version starts after the last "-" symbol
     project_name = _get_project_name(package, local_archive_basename)
 
     # Prepare headers with authentication if token is available
@@ -345,66 +346,69 @@ def _suggest_repo_from_github_api(
     github_search_url = "https://api.github.com/search/repositories"
 
     log.debug("Querying GitHub for a repository called %s ...", project_name)
-    params = {"q": project_name}
 
-    try:
-        response = requests.get(github_search_url, headers=headers, params=params, timeout=5)
-    except Exception as e:
-        log.debug("Exception when querying GitHub API: %r", e)
-        return []
+    all_repo_results = []
 
-    # Check and report rate limiting information
-    rate_limit_remaining = response.headers.get("X-RateLimit-Remaining")
+    # First search for non-archived repositories, then archived ones
+    for archived_param in ["archived:false", "archived:true"]:
+        params = {"q": f"{project_name} {archived_param}"}
 
-    if rate_limit_remaining is not None:
-        log.debug("GitHub API rate limit remaining: %s", rate_limit_remaining)
-        if int(rate_limit_remaining) <= RATE_LIMIT_REMAINING_GITHUB_API_WARNING:
-            log.warning(
-                "GitHub API rate limit nearly exhausted! Remaining: %s", rate_limit_remaining
-            )
-
-    if response.status_code != 200:
-        if response.status_code == 403:
-            if "rate limit exceeded" in response.text.lower():
-                log.warning(
-                    "GitHub API rate limit exceeded (HTTP 403). Consider using GITHUB_TOKEN environment variable for higher limits."
-                )
-            else:
-                log.warning(
-                    "GitHub API access forbidden (HTTP 403). Check your GITHUB_TOKEN if using authentication."
-                )
-        else:
-            log.warning(
-                "Error when querying GitHub API: HTTP %s - %s",
-                response.status_code,
-                response.text[:200].replace("\n", " "),
-            )
-        return []
-
-    data = response.json()
-    repositories = data.get("items", [])
-    if not repositories:
-        log.debug("No repositories found for GitHub query")
-        return []
-
-    repo_results = []
-
-    for repo in repositories[:MAX_RETURNED_GITHUB_API_REPOS]:
-        if not project_name.lower() in repo["html_url"].lower():
-            # repo obtained from GitHub query is not related to the local archive
+        try:
+            response = requests.get(github_search_url, headers=headers, params=params, timeout=5)
+        except Exception as e:
+            log.debug("Exception when querying GitHub API: %r", e)
             continue
 
-        repo_results.append(
-            RemoteRepoSuggestion(
-                repo=repo["html_url"],
-                spec_source=None,
-                suggested_by=suggestion_name,
-                notes=f"Repo found on GitHub (searched for {project_name})",
-                confidence=1.0,
-            )
-        )
+        # Check and report rate limiting information
+        rate_limit_remaining = response.headers.get("X-RateLimit-Remaining")
 
-    return repo_results
+        if rate_limit_remaining is not None:
+            log.debug("GitHub API rate limit remaining: %s", rate_limit_remaining)
+            if int(rate_limit_remaining) <= RATE_LIMIT_REMAINING_GITHUB_API_WARNING:
+                log.warning(
+                    "GitHub API rate limit nearly exhausted! Remaining: %s", rate_limit_remaining
+                )
+
+        if response.status_code != 200:
+            if response.status_code == 403:
+                if "rate limit exceeded" in response.text.lower():
+                    log.warning(
+                        "GitHub API rate limit exceeded (HTTP 403). Consider using GITHUB_TOKEN environment variable for higher limits."
+                    )
+                else:
+                    log.warning(
+                        "GitHub API access forbidden (HTTP 403). Check your GITHUB_TOKEN if using authentication."
+                    )
+            else:
+                log.warning(
+                    "Error when querying GitHub API: HTTP %s - %s",
+                    response.status_code,
+                    response.text[:200].replace("\n", " "),
+                )
+            continue
+
+        data = response.json()
+        repositories = data.get("items", [])
+        if not repositories:
+            log.debug("No repositories found for GitHub query with %s", archived_param)
+            continue
+
+        for repo in repositories[:MAX_RETURNED_GITHUB_API_REPOS]:
+            if not project_name.lower() in repo["html_url"].lower():
+                # repo obtained from GitHub query is not related to the local archive
+                continue
+
+            all_repo_results.append(
+                RemoteRepoSuggestion(
+                    repo=repo["html_url"],
+                    spec_source=None,
+                    suggested_by=suggestion_name,
+                    notes=f"Repo found on GitHub (searched for {project_name})",
+                    confidence=1.0,
+                )
+            )
+
+    return all_repo_results
 
 
 def _suggest_repo_from_repology_website(
