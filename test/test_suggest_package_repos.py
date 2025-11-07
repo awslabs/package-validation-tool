@@ -205,6 +205,7 @@ def test_suggest_package_repos_cli():
                 "https://github.com/everything/testrpm",  # from GitHub API
                 "https://github.com/archived/testrpm",  # from GitHub API archived search
                 # Other git repos
+                "git://sourceware.org/git/testrpm.git",  # from Sourceware
                 "https://example.com/git/testrpm.git",
                 "https://gitlab.com/testrpm/testrpm",  # from Repology
             ]
@@ -284,7 +285,7 @@ def test_suggest_package_repos_cli():
             assert "testrpm-0.1.tar" in json_data["suggestions"]
             suggestions = json_data["suggestions"]["testrpm-0.1.tar"]
 
-            assert len(suggestions) == 10
+            assert len(suggestions) == 11
 
             for suggestion in suggestions:
                 # The mock_subprocess_run_git_commands function returns "abcdef1234567890" for tag "v0.1"
@@ -311,6 +312,8 @@ def test_suggest_package_repos_cli():
                         "suggest_repo_from_spec_sources",
                         "suggest_repo_from_repology_website",
                     ]
+                elif suggestion["repo"] == "git://sourceware.org/git/testrpm.git":
+                    assert suggestion["suggested_by"] in ["suggest_repo_from_known_hostings"]
                 else:
                     # Print the unexpected repo for debugging
                     assert False, f"Unexpected repo URL: {suggestion['repo']}"

@@ -267,8 +267,8 @@ def clone_git_repo(
     """
 
     parsed = urllib.parse.urlparse(repo)
-    if parsed.scheme not in ["https", "ssh"]:
-        log.error("Failed to clone repository %s: only HTTPS and SSH URLs allowed", repo)
+    if parsed.scheme not in ["https", "ssh", "git"]:
+        log.error("Failed to clone repository %s: only HTTPS, SSH and GIT URLs allowed", repo)
         return False, ""
 
     temp_dir_created = False
