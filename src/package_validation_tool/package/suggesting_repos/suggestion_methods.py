@@ -297,6 +297,7 @@ def _suggest_repo_from_known_hostings(
         "GitLab": f"https://gitlab.com/{project_name}/{project_name}",
         "SourceForge": f"git://git.code.sf.net/p/{project_name}/{project_name}",
         "Savannah": f"https://git.savannah.gnu.org/git/{project_name}.git",
+        "Sourceware": f"git://sourceware.org/git/{project_name}.git",
     }
 
     for hosting, repo in repos_to_try.items():
