@@ -199,3 +199,57 @@ def test_combined_workflow():
                         )
                         assert commit_hash == expected_commit_hash
                         assert tag == expected_tag
+
+
+def test_extract_version_from_concatenated_project_version():
+    """Test extraction of version from archives where project name and version are concatenated without dashes."""
+
+    # Test case 1: unzip60 -> version should be "60"
+    result = extract_version_from_archive_name("unzip60.tar.gz")
+    assert result.version == "60"
+    assert result.is_commit_hash is False
+
+    # Test case 2: glibc2.63 -> version should be "2_63" (normalized)
+    result = extract_version_from_archive_name("glibc2.63.tar.xz")
+    assert result.version == "2_63"  # dots replaced with underscores
+    assert result.is_commit_hash is False
+
+    # Test case 3: sqlite3400000 -> version should be "3400000"
+    result = extract_version_from_archive_name("sqlite3400000.zip")
+    assert result.version == "3400000"
+    assert result.is_commit_hash is False
+
+    # Test case 4: project with version starting with 'v'
+    result = extract_version_from_archive_name("projectv1.2.3.tar.gz")
+    assert result.version == "1_2_3"  # 'v' removed, dots to underscores
+    assert result.is_commit_hash is False
+
+    # Test case 5: project with version starting with 'r'
+    result = extract_version_from_archive_name("toolr2.1.0.tar.gz")
+    assert result.version == "2_1_0"  # 'r' removed, dots to underscores
+    assert result.is_commit_hash is False
+
+    # Test case 6: Whole string is already a version
+    result = extract_version_from_archive_name("v2.3.1.tar.gz")
+    assert result.version == "2_3_1"
+    assert result.is_commit_hash is False
+
+    # Test case 7: Whole string is a commit hash
+    result = extract_version_from_archive_name("abcdef123456.tar.gz")
+    assert result.version == "abcdef123456"
+    assert result.is_commit_hash is True
+
+    # Test case 8: Whole string is g-prefixed commit hash
+    result = extract_version_from_archive_name("gabcdef123456.tar.gz")
+    assert result.version == "abcdef123456"  # 'g' prefix removed
+    assert result.is_commit_hash is True
+
+    # Test case 9: No clear version pattern found - should use whole string
+    result = extract_version_from_archive_name("someproject.tar.gz")
+    assert result.version == "someproject"
+    assert result.is_commit_hash is False
+
+    # Test case 10: Complex case with multiple digits
+    result = extract_version_from_archive_name("tool2sql3.14.tar.gz")
+    assert result.version == "2sql3_14"  # Expected: finds "2sql3.14" as version (ambiguous case)
+    assert result.is_commit_hash is False
