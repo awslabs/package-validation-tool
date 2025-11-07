@@ -179,8 +179,33 @@ def extract_version_from_archive_name(source_archive: str) -> VersionInfo:
                 )
                 continue
             else:
-                # Step 2.a.ii: Assume the whole string is a version
-                version = archive_name
+                # Step 2.a.ii: No dash found, try to separate project name from version
+                # Look for patterns like "unzip60" -> version="60" or "glibc2.63" -> version="2.63"
+
+                # Note that there are legit cases of a package name ending with a number, e.g.
+                # "bzip2". Fortunately, in these cases the archive contains a delimiter like "-", so
+                # we never end up in this corner-case code snippet.
+
+                # First check if whole string is already a version or commit hash
+                is_hash, actual_commit_hash = is_commit_hash(archive_name)
+                if is_hash:
+                    version_is_commit_hash = True
+                    version = actual_commit_hash
+                    break
+                elif is_version(archive_name):
+                    version = archive_name
+                    break
+
+                # Try to find where version part starts in the concatenated string
+                # Look for first digit that starts a version-like pattern
+                for j in range(1, len(archive_name)):
+                    potential_version = archive_name[j:]
+                    if potential_version and is_version(potential_version):
+                        version = potential_version
+                        break
+                else:
+                    # No version pattern found, assume whole string is version
+                    version = archive_name
                 break
         else:
             # Step 2.b: Process substring after the last dash
