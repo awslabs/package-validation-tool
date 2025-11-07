@@ -32,6 +32,7 @@ from bs4 import BeautifulSoup
 
 from package_validation_tool.package.suggesting_repos import RemoteRepoSuggestion
 from package_validation_tool.package.suggesting_repos.version_utils import (
+    is_commit_hash,
     is_version,
 )
 from package_validation_tool.utils import (
@@ -163,18 +164,45 @@ def _get_project_name(package: Dict[str, Any], local_archive_basename: str) -> s
     """
     Get project base name from the local archive filename (without extension and without version).
 
-    If the archive basename (without extension) is just a version string (like `v2.2.0.tar.gz`),
-    then return the source package name (stripped from trailing dots and numbers).
+    If the archive basename (without extension) is just a version string (like `v2.2.0.tar.gz`)
+    or just a commit hash (like `gabcdef123456.tar.gz`), then return the source package name
+    (stripped from trailing dots and numbers).
 
-    This poor-man's logic assumes that the version starts after the last "-" symbol. It also removes
-    any trailing digits (and a potential dot), e.g. `python3.9` -> `python` or `redis6` -> `redis`.
+    Otherwise, find the first `-` symbol after which a version or commit part starts and return
+    everything before it. This handles complex cases like:
+    - "json-c-0.18-20240915.tar.gz" -> "json-c"
+    - "libevent-2.1.12-stable.tar.gz" -> "libevent"
+    - "glibc-2.42-21-g7a8f3c6ee4.tar.xz" -> "glibc"
     """
+
+    def _normalize_project_name(name: str) -> str:
+        return name.rstrip("0123456789.")
+
     archive_without_extension = remove_archive_suffix(local_archive_basename)
 
-    if "source_package_name" in package and is_version(archive_without_extension):
-        return package["source_package_name"].rstrip("0123456789.")
+    if "source_package_name" in package:
+        # Check if archive basename is just a version string or just a commit hash
+        is_hash, _ = is_commit_hash(archive_without_extension)
+        if is_version(archive_without_extension) or is_hash:
+            return _normalize_project_name(package["source_package_name"])
 
-    return archive_without_extension.rsplit("-", 1)[0].rstrip("0123456789.")
+    # Split by '-' and find where the version/commit part starts
+    parts = archive_without_extension.split("-")
+    if len(parts) <= 1:
+        # No dashes, just return the whole thing after stripping trailing digits
+        return _normalize_project_name(archive_without_extension)
+
+    # Try each possible split point to find where version/commit starts
+    for i in range(1, len(parts)):
+        first_word_of_remaining_part = parts[i]
+        is_hash, _ = is_commit_hash(first_word_of_remaining_part)
+        if is_version(first_word_of_remaining_part) or is_hash:
+            # Found where version/commit starts, return everything before it
+            return _normalize_project_name("-".join(parts[:i]))
+
+    # If no version/commit found, return whatever is before the first '-' (or the whole thing) and
+    # strip trailing digits
+    return _normalize_project_name(archive_without_extension.rsplit("-", 1)[0])
 
 
 def _suggest_repo_from_spec_sources(

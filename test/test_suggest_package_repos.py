@@ -361,7 +361,7 @@ def test_get_project_name_version_only_archive():
     assert result == "kpatch"
 
     # Test case 3: Normal archive should use original logic
-    package = {"source_package_name": "zlib"}
+    package = {"source_package_name": "sourceofzlib"}
     result = _get_project_name(package, "zlib-1.2.11.tar.gz")
     assert result == "zlib"
 
@@ -381,7 +381,7 @@ def test_get_project_name_version_only_archive():
     assert result == "v"  # Original logic: remove extension, split on "-", strip digits
 
     # Test case 7: Normal archive with complex versioning
-    package = {"source_package_name": "openssh"}
+    package = {"source_package_name": "sourceofopenssh"}
     result = _get_project_name(package, "openssh-8.7p1.tar.gz")
     assert result == "openssh"
 
@@ -394,3 +394,38 @@ def test_get_project_name_version_only_archive():
     package = {"source_package_name": "test-package"}
     result = _get_project_name(package, "something123-1.0.tar.gz")
     assert result == "something"  # Original logic applied
+
+    # Test case 10: Commit hash only archive should use source package name
+    package = {"source_package_name": "example-project"}
+    result = _get_project_name(package, "abcdef123456.tar.gz")
+    assert result == "example-project"
+
+    # Test case 11: G-prefixed commit hash only archive should use source package name
+    package = {"source_package_name": "example-project"}
+    result = _get_project_name(package, "gabcdef123456.tar.gz")
+    assert result == "example-project"
+
+    # Test case 12: Complex archive with version and date - should extract project name
+    package = {"source_package_name": "sourceofjsonc"}
+    result = _get_project_name(package, "json-c-0.18-20240915.tar.gz")
+    assert result == "json-c"
+
+    # Test case 13: Complex archive with version and suffix - should extract project name
+    package = {"source_package_name": "sourceoflibevent"}
+    result = _get_project_name(package, "libevent-2.1.12-stable.tar.gz")
+    assert result == "libevent"
+
+    # Test case 14: Complex archive with version and g-prefixed commit - should extract project name
+    package = {"source_package_name": "sourceofglibc"}
+    result = _get_project_name(package, "glibc-2.42-21-g7a8f3c6ee4.tar.xz")
+    assert result == "glibc"
+
+    # Test case 15: Archive with multiple version components
+    package = {"source_package_name": "sourceofgcc"}
+    result = _get_project_name(package, "gcc-11.5.0-20240719.tar.xz")
+    assert result == "gcc"
+
+    # Test case 16: Archive with g-prefixed commit hash and suffix
+    package = {"source_package_name": "sourceoffoobar"}
+    result = _get_project_name(package, "foo-bar-g7a8f3c6ee4-stable.tar.xz")
+    assert result == "foo-bar"
