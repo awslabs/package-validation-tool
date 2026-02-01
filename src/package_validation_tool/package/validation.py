@@ -262,7 +262,7 @@ def validate_single_package(
         archive_results = matched_remote_archives.results[archive]
         matching_archives = [result.remote_archive for result in archive_results if result.matched]
 
-        suggested_archives = suggested_remote_archives.suggestions[archive]
+        suggested_archives = suggested_remote_archives.suggestions.get(archive, [])
         filtered_suggestions = [
             suggestion
             for suggestion in suggested_archives
@@ -282,7 +282,7 @@ def validate_single_package(
         repo_results = matched_remote_repos.results[archive]
         matching_repos = [result.remote_repo for result in repo_results if result.matched]
 
-        suggested_repos = suggested_remote_repos.suggestions[archive]
+        suggested_repos = suggested_remote_repos.suggestions.get(archive, [])
         filtered_suggestions = [
             suggestion for suggestion in suggested_repos if suggestion.repo in matching_repos
         ]
