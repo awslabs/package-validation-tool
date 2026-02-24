@@ -256,9 +256,9 @@ def test_invalid_json_file():
             )
 
 
-def test_nonexistent_json_file():
+def test_nonexistent_json_file(tmp_path):
     """Test that function raises error when JSON file doesn't exist."""
-    nonexistent_path = "/nonexistent/path/repos.json"
+    nonexistent_path = str(tmp_path / "nonexistent" / "repos.json")
 
     with pytest.raises(FileNotFoundError):
         match_package_repos(
