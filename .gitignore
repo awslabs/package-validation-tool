@@ -27,3 +27,4 @@ __pycache__/
 
 # Development environment
 /.vscode
+.venv-testing
