@@ -37,8 +37,13 @@ jobs:
         echo "Base branch coverage: $BASE_COVERAGE%"
 
     - name: Get PR coverage
+      env:
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # Bind the event-controlled SHA to an environment variable and
+        # reference it as a quoted shell variable, so it is never expanded
+        # into the script text (prevents GitHub Actions script injection).
       run: |
-        git checkout ${{ github.event.pull_request.head.sha }}
+        git checkout "$PR_HEAD_SHA"
         python -m pytest --cov-report=json:coverage-pr.json --tb=no -q
         PR_COVERAGE=$(python -c "import json; print(json.load(open('coverage-pr.json'))['totals']['percent_covered'])")
         echo "PR_COVERAGE=$PR_COVERAGE" >> $GITHUB_ENV
