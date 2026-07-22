@@ -52,7 +52,8 @@ recompile_package () (
     cp -r "$PROJECT_DIR"/* .
     rm -rf build
     echo "Building package ..." 1>&2
-    run_with_output_only_on_failure python3 setup.py install || status="$?"
+    # Install with pip (not the deprecated "setup.py install"/easy_install
+    run_with_output_only_on_failure python3 -m pip install . || status="$?"
 
     # Use exit, as this function is called in a subshell
     exit "$status"
