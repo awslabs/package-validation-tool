@@ -18,7 +18,9 @@ log = logging.getLogger(__name__)
 def data_to_return_type(func, data: dict):
     """Transform data in dictionary to object of function return type."""
     return_type = func.__annotations__.get("return")
-    if return_type and is_dataclass(return_type):
+    # is_dataclass() is true for both dataclass types and instances; require a
+    # type here so the call below is valid (and type-checkable as callable).
+    if return_type and isinstance(return_type, type) and is_dataclass(return_type):
         return return_type(**data)
     return data
 
