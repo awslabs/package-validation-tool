@@ -14,6 +14,7 @@ import argparse
 import logging
 import sys
 
+from package_validation_tool.matching.diff_comparison import compare_diffs_directories
 from package_validation_tool.matching.file_matching import match_files
 from package_validation_tool.operation_cache import initialize_cache, manage_cache
 from package_validation_tool.package import SUPPORTED_PACKAGE_TYPES, InstallationDecision
@@ -276,6 +277,12 @@ def add_package_validation_parser(parent):
     add_package_type_parameter(parser)
     add_output_json_parameter(parser)
     add_autotools_parameters(parser)
+    parser.add_argument(
+        "--diffs-path",
+        type=str,
+        default=None,
+        help="Directory to store file diffs (overrides PVT_FILE_MATCHER_DIFFS_PATH env var)",
+    )
 
 
 def add_system_validation_parser(parent):
@@ -329,6 +336,51 @@ def add_cache_parser(parent):
     )
 
 
+def add_compare_diffs_parser(parent):
+    """Create parser for comparing two diffs directories."""
+
+    parser = parent.add_parser(
+        "compare-diffs",
+        description=compare_diffs_directories.__doc__,
+    )
+    parser.set_defaults(command=compare_diffs_directories)
+
+    parser.add_argument(
+        "--dir-a",
+        type=str,
+        required=True,
+        help="First diffs directory to compare",
+    )
+    parser.add_argument(
+        "--dir-b",
+        type=str,
+        required=True,
+        help="Second diffs directory to compare",
+    )
+    parser.add_argument(
+        "-p",
+        "--package-name",
+        type=str,
+        help="Package name to filter comparison (optional)",
+    )
+    parser.add_argument(
+        "--normalize-dates",
+        action="store_true",
+        help="Ignore date differences when comparing files",
+    )
+    parser.add_argument(
+        "--normalize-versions",
+        action="store_true",
+        help="Ignore version string differences when comparing files",
+    )
+    parser.add_argument(
+        "--output-diffs",
+        type=str,
+        help="Directory to write diff-of-diffs for files with different content",
+    )
+    add_output_json_parameter(parser)
+
+
 def parse_args(given_args=None):
     """Parse args to be compatible with the used clients, return as dict."""
 
@@ -366,6 +418,7 @@ def parse_args(given_args=None):
     add_system_validation_parser(subparsers)
     add_package_store_parser(subparsers)
     add_cache_parser(subparsers)
+    add_compare_diffs_parser(subparsers)
 
     return vars(parser.parse_args(given_args))
 

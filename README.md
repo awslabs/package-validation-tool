@@ -114,6 +114,22 @@ package-validation-tool match-package-repos -p zlib -o zlib-match-repos.json
 
 # 4. Run full validation on all packages on the system
 package-validation-tool validate-system-packages -o all-system-packages.json
+
+# 5. Compare diffs between two package versions (see docs/compare-diffs.md)
+package-validation-tool validate-package -p curl-8.0.1 -o v1.json --diffs-path diffs/
+package-validation-tool validate-package -p curl-8.2.1 -o v2.json --diffs-path diffs/
+package-validation-tool compare-diffs \
+    --dir-a diffs/curl-8.0.1-*/curl-8.0.1.tar.xz \
+    --dir-b diffs/curl-8.2.1-*/curl-8.2.1.tar.xz \
+    -o comparison.json
+
+# 5b. Compare with normalization (ignore date/version string differences)
+package-validation-tool compare-diffs \
+    --dir-a diffs/curl-8.0.1-*/curl-8.0.1.tar.xz \
+    --dir-b diffs/curl-8.2.1-*/curl-8.2.1.tar.xz \
+    --normalize-dates --normalize-versions \
+    --output-diffs diff-of-diffs/ \
+    -o comparison-normalized.json
 ```
 
 **Notes on Docker**

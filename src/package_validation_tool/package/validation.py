@@ -323,11 +323,15 @@ def validate_package(
     install_build_deps: InstallationDecision = InstallationDecision.NO,
     autotools_dir: Optional[str] = None,
     apply_autotools: bool = True,
+    diffs_path: Optional[str] = None,
 ) -> bool:
     """Run analysis on a single package, and write report."""
 
     if package_type not in SUPPORTED_PACKAGE_TYPES:
         raise ValueError(f"Unsupported package type: {package_type}")
+
+    if diffs_path:
+        os.environ["PVT_FILE_MATCHER_DIFFS_PATH"] = diffs_path
 
     package_validation_result = validate_single_package(
         package,
