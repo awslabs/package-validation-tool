@@ -12,6 +12,45 @@ declare -r SCRIPT=$(readlink -e "$0")
 declare -r SCRIPT_DIR=$(dirname "$SCRIPT")
 declare -r PROJECT_DIR=$(readlink -e "$SCRIPT_DIR/..")
 
+# All available tests in execution order
+ALL_TESTS=(
+    test_package_storing
+    test_package_suggesting_archives
+    test_package_suggesting_archives_cache_same_package
+    test_package_suggesting_archives_cache_same_source
+    test_package_suggesting_repos
+    test_package_matching_archives
+    test_package_matching_repos
+    test_repology_website_structure
+)
+SELECTED_TESTS=()
+
+usage () {
+    cat << EOF 1>&2
+$(basename "$0") ... run system level tests for package-validation-tool
+
+Usage: $0 [-t test_name] [-h]
+  -t test_name: Run only the specified test (can be repeated)
+  -h: Show this help
+
+Available tests:
+$(printf '  %s\n' "${ALL_TESTS[@]}")
+EOF
+}
+
+while getopts "t:h" opt; do
+    case $opt in
+    t) SELECTED_TESTS+=("$OPTARG") ;;
+    h) usage; exit 0 ;;
+    *) usage; exit 1 ;;
+    esac
+done
+
+# Default to all tests if none selected
+if [ ${#SELECTED_TESTS[@]} -eq 0 ]; then
+    SELECTED_TESTS=("${ALL_TESTS[@]}")
+fi
+
 run_with_output_only_on_failure() (
     local -i status=0
 
@@ -379,16 +418,11 @@ if ! recompile_package; then
     exit 1
 fi
 
-# Execute all required tests
+# Execute selected tests
 STATUS=0
-test_package_storing || STATUS=$?
-test_package_suggesting_archives || STATUS=$?
-test_package_suggesting_archives_cache_same_package || STATUS=$?
-test_package_suggesting_archives_cache_same_source || STATUS=$?
-test_package_suggesting_repos || STATUS=$?
-test_package_matching_archives || STATUS=$?
-test_package_matching_repos || STATUS=$?
-test_repology_website_structure || STATUS=$?
+for test_func in "${SELECTED_TESTS[@]}"; do
+    "$test_func" || STATUS=$?
+done
 
 echo "Executed system-level testing with status $STATUS" 1>&2
 exit "$STATUS"

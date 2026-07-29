@@ -35,17 +35,24 @@ usage () {
     cat << EOF 1>&2
 $(basename $0) ... run integration tests in a docker environment
 
-Usage: $0 [-a prefix]
+Usage: $0 [-a prefix] [-t test_name]
   -a prefix: Set the image prefix to use for testing
+  -t test_name: Run only the specified test (can be repeated, passed to system-level-testing.sh)
 EOF
 }
 
+# Test filter arguments to pass through to system-level-testing.sh
+declare -a TEST_FILTER_ARGS=()
+
 # Parse command line options
-while getopts "a:h" opt; do
+while getopts "a:t:h" opt; do
     case $opt in
     a)
         # Override default prefixes with single specified prefix
         IMAGE_PREFIXES=("$OPTARG")
+        ;;
+    t)
+        TEST_FILTER_ARGS+=("-t" "$OPTARG")
         ;;
     h)
         usage
@@ -112,7 +119,7 @@ do
     cp -r "$PROJECT_DIR"/* .
     docker run --rm -t -v $PWD:$PWD -w $PWD -eHOME=$PWD \
             --network=host \
-            "$image" test/system-level-testing.sh
+            "$image" test/system-level-testing.sh "${TEST_FILTER_ARGS[@]}"
     popd > /dev/null
     echo -e " === done [$image]\n\n\n" 1>&2
 done

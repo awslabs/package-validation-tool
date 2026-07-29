@@ -38,10 +38,16 @@ def compare_strings_ignore_date_numbers(left_str: str, right_str: str) -> bool:
 
     # define regular expression patterns to match different date formats
     date_patterns = [
+        # Spelled-out dates: January 02, 2023 / Apr 26, 2023
+        r"\b(?:January|February|March|April|May|June|July|August|September|October"
+        r"|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+        r"\s+\d{1,2},?\s*\d{4}\b",
         r"\d{1,2}/\d{1,2}/\d{4}",  # MM/DD/YYYY
         r"\d{1,2}-\d{1,2}-\d{4}",  # MM-DD-YYYY
         r"\d{4}/\d{1,2}/\d{1,2}",  # YYYY/MM/DD
         r"\d{4}-\d{1,2}-\d{1,2}",  # YYYY-MM-DD
+        r"\b(?:19|20)\d{2}-(?:19|20)\d{2}\b",  # Year ranges: 2020-2021
+        r"\b(?:19|20)\d{2}\b",  # Standalone years: 2024
     ]
 
     date_replace_pattern = generate_random_string(20)

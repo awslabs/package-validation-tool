@@ -148,9 +148,9 @@ class RPMSourcepackage:
         # note that some fields have "__" suffix, to ignore them in the cached object (as they have
         # temporary directories in their values)
         self.package_name = package_name
-        self._storage_dir__: Optional[tempfile.TemporaryDirectory] = (
-            None  # Temporary storage on disk for this object
-        )
+        self._storage_dir__: Optional[
+            tempfile.TemporaryDirectory
+        ] = None  # Temporary storage on disk for this object
         self._srpm_file_path__: Optional[str] = os.path.abspath(srpm_file) if srpm_file else None
         self._srpm_content_dir__: Optional[str] = None
         self._spec: Optional[RPMSpec] = None
@@ -179,10 +179,11 @@ class RPMSourcepackage:
         # download source package, and extract, in content directory
         with pushd(self._storage_dir__.name):
             try:
-                self._srpm_file_path__, self._srpm_content_dir__ = (
-                    download_and_extract_source_package(
-                        self.package_name, srpm_file=self._srpm_file_path__
-                    )
+                (
+                    self._srpm_file_path__,
+                    self._srpm_content_dir__,
+                ) = download_and_extract_source_package(
+                    self.package_name, srpm_file=self._srpm_file_path__
                 )
             except RuntimeError as e:
                 log.error("Failed to download and extract source package: %s", e)
@@ -210,11 +211,13 @@ class RPMSourcepackage:
         # prepare package source code
         try:
             with pushd(self._storage_dir__.name):
-                self._rpm_build_home__, self._package_source_path__, spec_file = (
-                    prepare_rpmbuild_source(
-                        src_rpm_file=self._srpm_file_path__,
-                        package_rpmbuild_home=RPMSourcepackage.RPM_HOME_DIRNAME,
-                    )
+                (
+                    self._rpm_build_home__,
+                    self._package_source_path__,
+                    spec_file,
+                ) = prepare_rpmbuild_source(
+                    src_rpm_file=self._srpm_file_path__,
+                    package_rpmbuild_home=RPMSourcepackage.RPM_HOME_DIRNAME,
                 )
                 log.debug(
                     "Storing package %s source with applied patches in %s",
